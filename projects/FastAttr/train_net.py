@@ -6,18 +6,18 @@
 import logging
 import sys
 
-sys.path.append('.')
-
-from fastreid.config import get_cfg
-from fastreid.engine import DefaultTrainer
-from fastreid.engine import default_argument_parser, default_setup, launch
-from fastreid.utils.checkpoint import Checkpointer
-from fastreid.data.datasets import DATASET_REGISTRY
-from fastreid.data.build import _root, build_reid_train_loader, build_reid_test_loader
-from fastreid.data.transforms import build_transforms
-from fastreid.utils import comm
+sys.path.append(".")
 
 from fastattr import *
+from fastreid.config import get_cfg
+from fastreid.data.build import (_root, build_reid_test_loader,
+                                 build_reid_train_loader)
+from fastreid.data.datasets import DATASET_REGISTRY
+from fastreid.data.transforms import build_transforms
+from fastreid.engine import (DefaultTrainer, default_argument_parser,
+                             default_setup, launch)
+from fastreid.utils import comm
+from fastreid.utils.checkpoint import Checkpointer
 
 
 class AttrTrainer(DefaultTrainer):
@@ -32,8 +32,7 @@ class AttrTrainer(DefaultTrainer):
         Overwrite it if you'd like a different model.
         """
         model = DefaultTrainer.build_model(cfg)
-        if cfg.MODEL.LOSSES.BCE.WEIGHT_ENABLED and \
-                AttrTrainer.sample_weights is not None:
+        if cfg.MODEL.LOSSES.BCE.WEIGHT_ENABLED and AttrTrainer.sample_weights is not None:
             setattr(model, "sample_weights", AttrTrainer.sample_weights.to(model.device))
         else:
             setattr(model, "sample_weights", None)

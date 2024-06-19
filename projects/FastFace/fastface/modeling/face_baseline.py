@@ -5,8 +5,7 @@
 """
 
 import torch
-from fastreid.modeling.meta_arch import Baseline
-from fastreid.modeling.meta_arch import META_ARCH_REGISTRY
+from fastreid.modeling.meta_arch import META_ARCH_REGISTRY, Baseline
 
 
 @META_ARCH_REGISTRY.register()
@@ -32,7 +31,8 @@ class FaceBaseline(Baseline):
             # PreciseBN flag, When do preciseBN on different dataset, the number of classes in new dataset
             # may be larger than that in the original dataset, so the circle/arcface will
             # throw an error. We just set all the targets to 0 to avoid this problem.
-            if targets.sum() < 0: targets.zero_()
+            if targets.sum() < 0:
+                targets.zero_()
 
             outputs = self.heads(features, targets)
             return outputs, targets

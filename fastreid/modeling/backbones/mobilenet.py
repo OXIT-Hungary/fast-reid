@@ -5,14 +5,16 @@ MobileNetV2: Inverted Residuals and Linear Bottlenecks
 arXiv preprint arXiv:1801.04381.
 import from https://github.com/tonylins/pytorch-mobilenet-v2
 """
+
 import logging
 import math
 
 import torch
 import torch.nn as nn
-
 from fastreid.layers import get_norm
-from fastreid.utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
+from fastreid.utils.checkpoint import (get_missing_parameters_message,
+                                       get_unexpected_parameters_message)
+
 from .build import BACKBONE_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -42,16 +44,12 @@ def conv_3x3_bn(inp, oup, stride, bn_norm):
     return nn.Sequential(
         nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
         get_norm(bn_norm, oup),
-        nn.ReLU6(inplace=True)
+        nn.ReLU6(inplace=True),
     )
 
 
 def conv_1x1_bn(inp, oup, bn_norm):
-    return nn.Sequential(
-        nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
-        get_norm(bn_norm, oup),
-        nn.ReLU6(inplace=True)
-    )
+    return nn.Sequential(nn.Conv2d(inp, oup, 1, 1, 0, bias=False), get_norm(bn_norm, oup), nn.ReLU6(inplace=True))
 
 
 class InvertedResidual(nn.Module):
@@ -95,7 +93,7 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
-    def __init__(self, bn_norm, width_mult=1.):
+    def __init__(self, bn_norm, width_mult=1.0):
         super(MobileNetV2, self).__init__()
         # setting of inverted residual blocks
         self.cfgs = [
@@ -135,7 +133,7 @@ class MobileNetV2(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
                 if m.bias is not None:
                     m.bias.data.zero_()
             elif isinstance(m, nn.BatchNorm2d):
@@ -165,18 +163,18 @@ def build_mobilenetv2_backbone(cfg):
         "0.75x": 0.75,
         "0.5x": 0.5,
         "0.35x": 0.35,
-        '0.25x': 0.25,
-        '0.1x': 0.1,
+        "0.25x": 0.25,
+        "0.1x": 0.1,
     }[depth]
 
     model = MobileNetV2(bn_norm, width_mult)
 
     if pretrain:
         try:
-            state_dict = torch.load(pretrain_path, map_location=torch.device('cpu'))
+            state_dict = torch.load(pretrain_path, map_location=torch.device("cpu"))
             logger.info(f"Loading pretrained model from {pretrain_path}")
         except FileNotFoundError as e:
-            logger.info(f'{pretrain_path} is not found! Please check this path.')
+            logger.info(f"{pretrain_path} is not found! Please check this path.")
             raise e
         except KeyError as e:
             logger.info("State dict keys error! Please check the state dict.")
@@ -184,12 +182,8 @@ def build_mobilenetv2_backbone(cfg):
 
         incompatible = model.load_state_dict(state_dict, strict=False)
         if incompatible.missing_keys:
-            logger.info(
-                get_missing_parameters_message(incompatible.missing_keys)
-            )
+            logger.info(get_missing_parameters_message(incompatible.missing_keys))
         if incompatible.unexpected_keys:
-            logger.info(
-                get_unexpected_parameters_message(incompatible.unexpected_keys)
-            )
+            logger.info(get_unexpected_parameters_message(incompatible.unexpected_keys))
 
     return model

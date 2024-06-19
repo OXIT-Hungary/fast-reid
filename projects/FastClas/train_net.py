@@ -10,13 +10,12 @@ import logging
 import os
 import sys
 
-sys.path.append('.')
+sys.path.append(".")
 
+from fastclas import *
 from fastreid.config import get_cfg
 from fastreid.engine import default_argument_parser, default_setup, launch
 from fastreid.utils.checkpoint import Checkpointer, PathManager
-
-from fastclas import *
 
 
 def setup(args):
@@ -44,7 +43,7 @@ def main(args):
         try:
             output_dir = os.path.dirname(cfg.MODEL.WEIGHTS)
             path = os.path.join(output_dir, "idx2class.json")
-            with PathManager.open(path, 'r') as f:
+            with PathManager.open(path, "r") as f:
                 idx2class = json.load(f)
             ClasTrainer.idx2class = idx2class
         except:

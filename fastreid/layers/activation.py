@@ -10,11 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-__all__ = [
-    'Mish',
-    'Swish',
-    'MemoryEfficientSwish',
-    'GELU']
+__all__ = ["Mish", "Swish", "MemoryEfficientSwish", "GELU"]
 
 
 class Mish(nn.Module):

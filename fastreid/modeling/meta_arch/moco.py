@@ -6,10 +6,10 @@
 
 import torch
 import torch.nn.functional as F
-from torch import nn
-
 from fastreid.modeling.losses.utils import concat_all_gather
 from fastreid.utils import comm
+from torch import nn
+
 from .baseline import Baseline
 from .build import META_ARCH_REGISTRY
 
@@ -19,8 +19,7 @@ class MoCo(Baseline):
     def __init__(self, cfg):
         super().__init__(cfg)
 
-        dim = cfg.MODEL.HEADS.EMBEDDING_DIM if cfg.MODEL.HEADS.EMBEDDING_DIM \
-            else cfg.MODEL.BACKBONE.FEAT_DIM
+        dim = cfg.MODEL.HEADS.EMBEDDING_DIM if cfg.MODEL.HEADS.EMBEDDING_DIM else cfg.MODEL.BACKBONE.FEAT_DIM
         size = cfg.MODEL.QUEUE_SIZE
         self.memory = Memory(dim, size)
 
@@ -33,9 +32,9 @@ class MoCo(Baseline):
         loss_dict = super().losses(outputs, gt_labels)
 
         # memory loss
-        pred_features = outputs['features']
+        pred_features = outputs["features"]
         loss_mb = self.memory(pred_features, gt_labels)
-        loss_dict['loss_mb'] = loss_mb
+        loss_dict["loss_mb"] = loss_mb
         return loss_dict
 
 
@@ -79,8 +78,8 @@ class Memory(nn.Module):
         assert self.K % batch_size == 0  # for simplicity
 
         # replace the keys at ptr (dequeue and enqueue)
-        self.queue[:, ptr:ptr + batch_size] = keys.T
-        self.queue_label[:, ptr:ptr + batch_size] = targets
+        self.queue[:, ptr : ptr + batch_size] = keys.T
+        self.queue_label[:, ptr : ptr + batch_size] = targets
         ptr = (ptr + batch_size) % self.K  # move pointer
 
         self.queue_ptr[0] = ptr
@@ -118,8 +117,8 @@ class Memory(nn.Module):
         s_p = dist_mat * is_pos
         s_n = dist_mat * is_neg
 
-        logit_p = -self.gamma * s_p + (-99999999.) * (1 - is_pos)
-        logit_n = self.gamma * (s_n + self.margin) + (-99999999.) * (1 - is_neg)
+        logit_p = -self.gamma * s_p + (-99999999.0) * (1 - is_pos)
+        logit_n = self.gamma * (s_n + self.margin) + (-99999999.0) * (1 - is_neg)
 
         loss = F.softplus(torch.logsumexp(logit_p, dim=1) + torch.logsumexp(logit_n, dim=1)).mean()
 

@@ -12,23 +12,20 @@ from collections import OrderedDict
 import torch
 from torch.nn.parallel import DistributedDataParallel
 
-sys.path.append('.')
+sys.path.append(".")
 
 from fastreid.config import get_cfg
 from fastreid.data import build_reid_test_loader, build_reid_train_loader
-from fastreid.evaluation.testing import flatten_results_dict
 from fastreid.engine import default_argument_parser, default_setup, launch
+from fastreid.evaluation import (ReidEvaluator, inference_on_dataset,
+                                 print_csv_format)
+from fastreid.evaluation.testing import flatten_results_dict
 from fastreid.modeling import build_model
 from fastreid.solver import build_lr_scheduler, build_optimizer
-from fastreid.evaluation import inference_on_dataset, print_csv_format, ReidEvaluator
-from fastreid.utils.checkpoint import Checkpointer, PeriodicCheckpointer
 from fastreid.utils import comm
-from fastreid.utils.events import (
-    CommonMetricPrinter,
-    EventStorage,
-    JSONWriter,
-    TensorboardXWriter
-)
+from fastreid.utils.checkpoint import Checkpointer, PeriodicCheckpointer
+from fastreid.utils.events import (CommonMetricPrinter, EventStorage,
+                                   JSONWriter, TensorboardXWriter)
 
 logger = logging.getLogger("fastreid")
 
@@ -45,9 +42,7 @@ def do_test(cfg, model):
         try:
             data_loader, evaluator = get_evaluator(cfg, dataset_name)
         except NotImplementedError:
-            logger.warn(
-                "No evaluator found. implement its `build_evaluator` method."
-            )
+            logger.warn("No evaluator found. implement its `build_evaluator` method.")
             results[dataset_name] = {}
             continue
         results_i = inference_on_dataset(model, data_loader, evaluator, flip_test=cfg.TEST.FLIP.ENABLED)
@@ -56,11 +51,9 @@ def do_test(cfg, model):
         if comm.is_main_process():
             assert isinstance(
                 results, dict
-            ), "Evaluator must return a dict on the main process. Got {} instead.".format(
-                results
-            )
+            ), "Evaluator must return a dict on the main process. Got {} instead.".format(results)
             logger.info("Evaluation results for {} in csv format:".format(dataset_name))
-            results_i['dataset'] = dataset_name
+            results_i["dataset"] = dataset_name
             print_csv_format(results_i)
 
     if len(results) == 1:
@@ -80,16 +73,10 @@ def do_train(cfg, model, resume=False):
     scheduler = build_lr_scheduler(cfg, optimizer, iters_per_epoch)
 
     checkpointer = Checkpointer(
-        model,
-        cfg.OUTPUT_DIR,
-        save_to_disk=comm.is_main_process(),
-        optimizer=optimizer,
-        **scheduler
+        model, cfg.OUTPUT_DIR, save_to_disk=comm.is_main_process(), optimizer=optimizer, **scheduler
     )
 
-    start_epoch = (
-            checkpointer.resume_or_load(cfg.MODEL.WEIGHTS, resume=resume).get("epoch", -1) + 1
-    )
+    start_epoch = checkpointer.resume_or_load(cfg.MODEL.WEIGHTS, resume=resume).get("epoch", -1) + 1
     iteration = start_iter = start_epoch * iters_per_epoch
 
     max_epoch = cfg.SOLVER.MAX_EPOCH
@@ -107,7 +94,7 @@ def do_train(cfg, model, resume=False):
         [
             CommonMetricPrinter(max_iter),
             JSONWriter(os.path.join(cfg.OUTPUT_DIR, "metrics.json")),
-            TensorboardXWriter(cfg.OUTPUT_DIR)
+            TensorboardXWriter(cfg.OUTPUT_DIR),
         ]
         if comm.is_main_process()
         else []
@@ -138,9 +125,11 @@ def do_train(cfg, model, resume=False):
                 optimizer.step()
                 storage.put_scalar("lr", optimizer.param_groups[0]["lr"], smoothing_hint=False)
 
-                if iteration - start_iter > 5 and \
-                        ((iteration + 1) % 200 == 0 or iteration == max_iter - 1) and \
-                        ((iteration + 1) % iters_per_epoch != 0):
+                if (
+                    iteration - start_iter > 5
+                    and ((iteration + 1) % 200 == 0 or iteration == max_iter - 1)
+                    and ((iteration + 1) % iters_per_epoch != 0)
+                ):
                     for writer in writers:
                         writer.write()
 
@@ -156,11 +145,7 @@ def do_train(cfg, model, resume=False):
             if iteration > warmup_iters and (epoch + 1) > delay_epochs:
                 scheduler["lr_sched"].step()
 
-            if (
-                    cfg.TEST.EVAL_PERIOD > 0
-                    and (epoch + 1) % cfg.TEST.EVAL_PERIOD == 0
-                    and iteration != max_iter - 1
-            ):
+            if cfg.TEST.EVAL_PERIOD > 0 and (epoch + 1) % cfg.TEST.EVAL_PERIOD == 0 and iteration != max_iter - 1:
                 results = do_test(cfg, model)
                 # Compared to "train_net.py", the test results are not dumped to EventStorage
             else:
@@ -198,9 +183,7 @@ def main(args):
 
     distributed = comm.get_world_size() > 1
     if distributed:
-        model = DistributedDataParallel(
-            model, device_ids=[comm.get_local_rank()], broadcast_buffers=False
-        )
+        model = DistributedDataParallel(model, device_ids=[comm.get_local_rank()], broadcast_buffers=False)
 
     do_train(cfg, model, resume=args.resume)
     return do_test(cfg, model)

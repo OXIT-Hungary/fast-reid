@@ -3,15 +3,14 @@
 @author:  liaoxingyu
 @contact: sherlockliao01@gmail.com
 """
-import torch
-import numpy as np
-from PIL import Image, ImageOps
+import queue
 import threading
 
-import queue
-from torch.utils.data import DataLoader
-
+import numpy as np
+import torch
 from fastreid.utils.file_io import PathManager
+from PIL import Image, ImageOps
+from torch.utils.data import DataLoader
 
 
 def read_image(file_name, format=None):
@@ -148,9 +147,7 @@ class BackgroundGenerator(threading.Thread):
 class DataLoaderX(DataLoader):
     def __init__(self, local_rank, **kwargs):
         super().__init__(**kwargs)
-        self.stream = torch.cuda.Stream(
-            local_rank
-        )  # create a new cuda stream in each process
+        self.stream = torch.cuda.Stream(local_rank)  # create a new cuda stream in each process
         self.local_rank = local_rank
 
     def __iter__(self):
@@ -182,14 +179,10 @@ class DataLoaderX(DataLoader):
         with torch.cuda.stream(self.stream):
             for k in self.batch:
                 if isinstance(self.batch[k], torch.Tensor):
-                    self.batch[k] = self.batch[k].to(
-                        device=self.local_rank, non_blocking=True
-                    )
+                    self.batch[k] = self.batch[k].to(device=self.local_rank, non_blocking=True)
 
     def __next__(self):
-        torch.cuda.current_stream().wait_stream(
-            self.stream
-        )  # wait tensor to put on GPU
+        torch.cuda.current_stream().wait_stream(self.stream)  # wait tensor to put on GPU
         batch = self.batch
         if batch is None:
             raise StopIteration

@@ -11,11 +11,10 @@ from collections import deque
 import cv2
 import torch
 import torch.multiprocessing as mp
-
 from fastreid.engine import DefaultPredictor
 
 try:
-    mp.set_start_method('spawn')
+    mp.set_start_method("spawn")
 except RuntimeError:
     pass
 
@@ -124,9 +123,7 @@ class AsyncPredictor:
             cfg = cfg.clone()
             cfg.defrost()
             cfg.MODEL.DEVICE = "cuda:{}".format(gpuid) if num_gpus > 0 else "cpu"
-            self.procs.append(
-                AsyncPredictor._PredictWorker(cfg, self.task_queue, self.result_queue)
-            )
+            self.procs.append(AsyncPredictor._PredictWorker(cfg, self.task_queue, self.result_queue))
 
         self.put_idx = 0
         self.get_idx = 0

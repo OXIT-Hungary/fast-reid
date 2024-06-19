@@ -8,8 +8,9 @@ import logging
 import os
 
 import torch
-TORCH_MAJOR = int(torch.__version__.split('.')[0])
-TORCH_MINOR = int(torch.__version__.split('.')[1])
+
+TORCH_MAJOR = int(torch.__version__.split(".")[0])
+TORCH_MINOR = int(torch.__version__.split(".")[1])
 
 if TORCH_MAJOR == 1 and TORCH_MINOR < 8:
     from torch._six import string_classes
@@ -20,16 +21,14 @@ from collections import Mapping
 
 from fastreid.config import configurable
 from fastreid.utils import comm
+
 from . import samplers
 from .common import CommDataset
 from .data_utils import DataLoaderX
 from .datasets import DATASET_REGISTRY
 from .transforms import build_transforms
 
-__all__ = [
-    "build_reid_train_loader",
-    "build_reid_test_loader"
-]
+__all__ = ["build_reid_train_loader", "build_reid_test_loader"]
 
 _root = os.getenv("FASTREID_DATASETS", "datasets")
 
@@ -79,7 +78,11 @@ def _train_loader_from_config(cfg, *, train_set=None, transforms=None, sampler=N
 
 @configurable(from_config=_train_loader_from_config)
 def build_reid_train_loader(
-        train_set, *, sampler=None, total_batch_size, num_workers=0,
+    train_set,
+    *,
+    sampler=None,
+    total_batch_size,
+    num_workers=0,
 ):
     """
     Build a dataloader for object re-identification with some default features.

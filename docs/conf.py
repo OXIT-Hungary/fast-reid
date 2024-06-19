@@ -17,14 +17,14 @@
 #
 import os
 import sys
-from unittest import mock
-from sphinx.domains import Domain
 from typing import Dict, List, Tuple
+from unittest import mock
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
 import sphinx_rtd_theme
+from sphinx.domains import Domain
 
 
 class GithubURLDomain(Domain):
@@ -221,9 +221,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, "fastreid.tex", "fastreid Documentation", "fastreid contributors", "manual")
-]
+latex_documents = [(master_doc, "fastreid.tex", "fastreid Documentation", "fastreid contributors", "manual")]
 
 
 # -- Options for manual page output ------------------------------------------
@@ -277,9 +275,7 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
         # "draw_panoptic_seg_predictions",
     }
     try:
-        if name in HIDDEN or (
-            hasattr(obj, "__doc__") and obj.__doc__.lower().strip().startswith("deprecated")
-        ):
+        if name in HIDDEN or (hasattr(obj, "__doc__") and obj.__doc__.lower().strip().startswith("deprecated")):
             print("Skipping deprecated object: {}".format(name))
             return True
     except:

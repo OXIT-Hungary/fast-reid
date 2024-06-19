@@ -4,18 +4,18 @@
 @contact: sherlockliao01@gmail.com
 """
 import copy
+import itertools
 import logging
 import time
-import itertools
 from collections import OrderedDict
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-from sklearn import metrics
-
 from fastreid.utils import comm
 from fastreid.utils.compute_dist import build_dist
+from sklearn import metrics
+
 from .evaluator import DatasetEvaluator
 from .query_expansion import aqe
 from .rank_cylib import compile_helper
@@ -29,7 +29,7 @@ class ReidEvaluator(DatasetEvaluator):
         self._num_query = num_query
         self._output_dir = output_dir
 
-        self._cpu_device = torch.device('cpu')
+        self._cpu_device = torch.device("cpu")
 
         self._predictions = []
         self._compile_dependencies()
@@ -39,10 +39,9 @@ class ReidEvaluator(DatasetEvaluator):
 
     def process(self, inputs, outputs):
         prediction = {
-            'feats': outputs.to(self._cpu_device, torch.float32),
-            'pids': inputs['targets'].to(self._cpu_device),
-            'camids': inputs['camids'].to(self._cpu_device)
-
+            "feats": outputs.to(self._cpu_device, torch.float32),
+            "pids": inputs["targets"].to(self._cpu_device),
+            "camids": inputs["camids"].to(self._cpu_device),
         }
         self._predictions.append(prediction)
 
@@ -62,22 +61,22 @@ class ReidEvaluator(DatasetEvaluator):
         pids = []
         camids = []
         for prediction in predictions:
-            features.append(prediction['feats'])
-            pids.append(prediction['pids'])
-            camids.append(prediction['camids'])
+            features.append(prediction["feats"])
+            pids.append(prediction["pids"])
+            camids.append(prediction["camids"])
 
         features = torch.cat(features, dim=0)
         pids = torch.cat(pids, dim=0).numpy()
         camids = torch.cat(camids, dim=0).numpy()
         # query feature, person ids and camera ids
-        query_features = features[:self._num_query]
-        query_pids = pids[:self._num_query]
-        query_camids = camids[:self._num_query]
+        query_features = features[: self._num_query]
+        query_pids = pids[: self._num_query]
+        query_camids = camids[: self._num_query]
 
         # gallery features, person ids and camera ids
-        gallery_features = features[self._num_query:]
-        gallery_pids = pids[self._num_query:]
-        gallery_camids = camids[self._num_query:]
+        gallery_features = features[self._num_query :]
+        gallery_pids = pids[self._num_query :]
+        gallery_camids = camids[self._num_query :]
 
         self._results = OrderedDict()
 
@@ -104,18 +103,20 @@ class ReidEvaluator(DatasetEvaluator):
             dist = rerank_dist * (1 - lambda_value) + dist * lambda_value
 
         from .rank import evaluate_rank
+
         cmc, all_AP, all_INP = evaluate_rank(dist, query_pids, gallery_pids, query_camids, gallery_camids)
 
         mAP = np.mean(all_AP)
         mINP = np.mean(all_INP)
         for r in [1, 5, 10]:
-            self._results['Rank-{}'.format(r)] = cmc[r - 1] * 100
-        self._results['mAP'] = mAP * 100
-        self._results['mINP'] = mINP * 100
+            self._results["Rank-{}".format(r)] = cmc[r - 1] * 100
+        self._results["mAP"] = mAP * 100
+        self._results["mINP"] = mINP * 100
         self._results["metric"] = (mAP + cmc[0]) / 2 * 100
 
         if self.cfg.TEST.ROC.ENABLED:
             from .roc import evaluate_roc
+
             scores, labels = evaluate_roc(dist, query_pids, gallery_pids, query_camids, gallery_camids)
             fprs, tprs, thres = metrics.roc_curve(labels, scores)
 
@@ -139,5 +140,6 @@ class ReidEvaluator(DatasetEvaluator):
 
                 logger.info(
                     ">>> done with reid evaluation cython tool. Compilation time: {:.3f} "
-                    "seconds".format(time.time() - start_time))
+                    "seconds".format(time.time() - start_time)
+                )
         comm.synchronize()

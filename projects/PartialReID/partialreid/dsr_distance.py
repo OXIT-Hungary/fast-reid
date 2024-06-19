@@ -13,7 +13,7 @@ def normalize(nparray, order=2, axis=0):
 
 
 def compute_dsr_dist(array1, array2, distmat, scores):
-    """ Compute the sptial feature reconstruction of all pairs
+    """Compute the sptial feature reconstruction of all pairs
      array: [M, N, C] M: the number of query, N: the number of spatial feature, C: the dimension of each spatial feature
      array2: [M, N, C] M: the number of gallery
     :return:

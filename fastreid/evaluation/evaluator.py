@@ -5,7 +5,6 @@ import time
 from contextlib import contextmanager
 
 import torch
-
 from fastreid.utils import comm
 from fastreid.utils.logger import log_every_n_seconds
 

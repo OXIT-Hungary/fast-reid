@@ -9,15 +9,22 @@ DropBlock impl inspired by two Tensorflow impl that I liked:
  - https://github.com/clovaai/assembled-cnn/blob/master/nets/blocks.py
 Hacked together by / Copyright 2020 Ross Wightman
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 def drop_block_2d(
-        x, drop_prob: float = 0.1, block_size: int = 7, gamma_scale: float = 1.0,
-        with_noise: bool = False, inplace: bool = False, batchwise: bool = False):
-    """ DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
+    x,
+    drop_prob: float = 0.1,
+    block_size: int = 7,
+    gamma_scale: float = 1.0,
+    with_noise: bool = False,
+    inplace: bool = False,
+    batchwise: bool = False,
+):
+    """DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
     DropBlock with an experimental gaussian noise option. This layer has been tested on a few training
     runs with success, but needs further validation and possibly optimization for lower runtime impact.
     """
@@ -25,13 +32,13 @@ def drop_block_2d(
     total_size = W * H
     clipped_block_size = min(block_size, min(W, H))
     # seed_drop_rate, the gamma parameter
-    gamma = gamma_scale * drop_prob * total_size / clipped_block_size ** 2 / (
-            (W - block_size + 1) * (H - block_size + 1))
+    gamma = gamma_scale * drop_prob * total_size / clipped_block_size**2 / ((W - block_size + 1) * (H - block_size + 1))
 
     # Forces the block to be inside the feature map.
     w_i, h_i = torch.meshgrid(torch.arange(W).to(x.device), torch.arange(H).to(x.device))
-    valid_block = ((w_i >= clipped_block_size // 2) & (w_i < W - (clipped_block_size - 1) // 2)) & \
-                  ((h_i >= clipped_block_size // 2) & (h_i < H - (clipped_block_size - 1) // 2))
+    valid_block = ((w_i >= clipped_block_size // 2) & (w_i < W - (clipped_block_size - 1) // 2)) & (
+        (h_i >= clipped_block_size // 2) & (h_i < H - (clipped_block_size - 1) // 2)
+    )
     valid_block = torch.reshape(valid_block, (1, 1, H, W)).to(dtype=x.dtype)
 
     if batchwise:
@@ -42,9 +49,10 @@ def drop_block_2d(
     block_mask = ((2 - gamma - valid_block + uniform_noise) >= 1).to(dtype=x.dtype)
     block_mask = -F.max_pool2d(
         -block_mask,
-        kernel_size=clipped_block_size,  # block_size,
+        kernel_size=clipped_block_size,
         stride=1,
-        padding=clipped_block_size // 2)
+        padding=clipped_block_size // 2,  # block_size,
+    )
 
     if with_noise:
         normal_noise = torch.randn((1, C, H, W), dtype=x.dtype, device=x.device) if batchwise else torch.randn_like(x)
@@ -62,17 +70,22 @@ def drop_block_2d(
 
 
 def drop_block_fast_2d(
-        x: torch.Tensor, drop_prob: float = 0.1, block_size: int = 7,
-        gamma_scale: float = 1.0, with_noise: bool = False, inplace: bool = False, batchwise: bool = False):
-    """ DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
+    x: torch.Tensor,
+    drop_prob: float = 0.1,
+    block_size: int = 7,
+    gamma_scale: float = 1.0,
+    with_noise: bool = False,
+    inplace: bool = False,
+    batchwise: bool = False,
+):
+    """DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
     DropBlock with an experimental gaussian noise option. Simplied from above without concern for valid
     block mask at edges.
     """
     B, C, H, W = x.shape
     total_size = W * H
     clipped_block_size = min(block_size, min(W, H))
-    gamma = gamma_scale * drop_prob * total_size / clipped_block_size ** 2 / (
-            (W - block_size + 1) * (H - block_size + 1))
+    gamma = gamma_scale * drop_prob * total_size / clipped_block_size**2 / ((W - block_size + 1) * (H - block_size + 1))
 
     if batchwise:
         # one mask for whole batch, quite a bit faster
@@ -81,14 +94,18 @@ def drop_block_fast_2d(
         # mask per batch element
         block_mask = torch.rand_like(x) < gamma
     block_mask = F.max_pool2d(
-        block_mask.to(x.dtype), kernel_size=clipped_block_size, stride=1, padding=clipped_block_size // 2)
+        block_mask.to(x.dtype),
+        kernel_size=clipped_block_size,
+        stride=1,
+        padding=clipped_block_size // 2,
+    )
 
     if with_noise:
         normal_noise = torch.randn((1, C, H, W), dtype=x.dtype, device=x.device) if batchwise else torch.randn_like(x)
         if inplace:
-            x.mul_(1. - block_mask).add_(normal_noise * block_mask)
+            x.mul_(1.0 - block_mask).add_(normal_noise * block_mask)
         else:
-            x = x * (1. - block_mask) + normal_noise * block_mask
+            x = x * (1.0 - block_mask) + normal_noise * block_mask
     else:
         block_mask = 1 - block_mask
         normalize_scale = (block_mask.numel() / block_mask.to(dtype=torch.float32).sum().add(1e-7)).to(dtype=x.dtype)
@@ -100,17 +117,18 @@ def drop_block_fast_2d(
 
 
 class DropBlock2d(nn.Module):
-    """ DropBlock. See https://arxiv.org/pdf/1810.12890.pdf
-    """
+    """DropBlock. See https://arxiv.org/pdf/1810.12890.pdf"""
 
-    def __init__(self,
-                 drop_prob=0.1,
-                 block_size=7,
-                 gamma_scale=1.0,
-                 with_noise=False,
-                 inplace=False,
-                 batchwise=False,
-                 fast=True):
+    def __init__(
+        self,
+        drop_prob=0.1,
+        block_size=7,
+        gamma_scale=1.0,
+        with_noise=False,
+        inplace=False,
+        batchwise=False,
+        fast=True,
+    ):
         super(DropBlock2d, self).__init__()
         self.drop_prob = drop_prob
         self.gamma_scale = gamma_scale
@@ -125,13 +143,27 @@ class DropBlock2d(nn.Module):
             return x
         if self.fast:
             return drop_block_fast_2d(
-                x, self.drop_prob, self.block_size, self.gamma_scale, self.with_noise, self.inplace, self.batchwise)
+                x,
+                self.drop_prob,
+                self.block_size,
+                self.gamma_scale,
+                self.with_noise,
+                self.inplace,
+                self.batchwise,
+            )
         else:
             return drop_block_2d(
-                x, self.drop_prob, self.block_size, self.gamma_scale, self.with_noise, self.inplace, self.batchwise)
+                x,
+                self.drop_prob,
+                self.block_size,
+                self.gamma_scale,
+                self.with_noise,
+                self.inplace,
+                self.batchwise,
+            )
 
 
-def drop_path(x, drop_prob: float = 0., training: bool = False):
+def drop_path(x, drop_prob: float = 0.0, training: bool = False):
     """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks).
     This is the same as the DropConnect impl I created for EfficientNet, etc networks, however,
     the original name is misleading as 'Drop Connect' is a different form of dropout in a separate paper...
@@ -139,7 +171,7 @@ def drop_path(x, drop_prob: float = 0., training: bool = False):
     changing the layer and argument names to 'drop path' rather than mix DropConnect as a layer name and use
     'survival rate' as the argument.
     """
-    if drop_prob == 0. or not training:
+    if drop_prob == 0.0 or not training:
         return x
     keep_prob = 1 - drop_prob
     shape = (x.shape[0],) + (1,) * (x.ndim - 1)  # work with diff dim tensors, not just 2D ConvNets
@@ -150,8 +182,7 @@ def drop_path(x, drop_prob: float = 0., training: bool = False):
 
 
 class DropPath(nn.Module):
-    """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
-    """
+    """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks)."""
 
     def __init__(self, drop_prob=None):
         super(DropPath, self).__init__()

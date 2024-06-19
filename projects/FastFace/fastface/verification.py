@@ -33,8 +33,8 @@ from sklearn.model_selection import KFold
 
 
 def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_folds=10, pca=0):
-    assert (embeddings1.shape[0] == embeddings2.shape[0])
-    assert (embeddings1.shape[1] == embeddings2.shape[1])
+    assert embeddings1.shape[0] == embeddings2.shape[0]
+    assert embeddings1.shape[1] == embeddings2.shape[1]
     nrof_pairs = min(len(actual_issame), embeddings1.shape[0])
     nrof_thresholds = len(thresholds)
     k_fold = KFold(n_splits=nrof_folds, shuffle=False)
@@ -53,7 +53,7 @@ def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_fold
         # print('train_set', train_set)
         # print('test_set', test_set)
         if pca > 0:
-            print('doing pca on', fold_idx)
+            print("doing pca on", fold_idx)
             embed1_train = embeddings1[train_set]
             embed2_train = embeddings2[train_set]
             _embed_train = np.concatenate((embed1_train, embed2_train), axis=0)
@@ -76,12 +76,12 @@ def calculate_roc(thresholds, embeddings1, embeddings2, actual_issame, nrof_fold
         #         print('best_threshold_index', best_threshold_index, acc_train[best_threshold_index])
         best_thresholds[fold_idx] = thresholds[best_threshold_index]
         for threshold_idx, threshold in enumerate(thresholds):
-            tprs[fold_idx, threshold_idx], fprs[fold_idx, threshold_idx], _ = calculate_accuracy(threshold,
-                                                                                                 dist[test_set],
-                                                                                                 actual_issame[
-                                                                                                     test_set])
-        _, _, accuracy[fold_idx] = calculate_accuracy(thresholds[best_threshold_index], dist[test_set],
-                                                      actual_issame[test_set])
+            tprs[fold_idx, threshold_idx], fprs[fold_idx, threshold_idx], _ = calculate_accuracy(
+                threshold, dist[test_set], actual_issame[test_set]
+            )
+        _, _, accuracy[fold_idx] = calculate_accuracy(
+            thresholds[best_threshold_index], dist[test_set], actual_issame[test_set]
+        )
 
     tpr = np.mean(tprs, 0)
     fpr = np.mean(fprs, 0)
@@ -102,7 +102,7 @@ def calculate_accuracy(threshold, dist, actual_issame):
 
 
 def calculate_val(thresholds, embeddings1, embeddings2, actual_issame, far_target, nrof_folds=10):
-    '''
+    """
     Copy from [insightface](https://github.com/deepinsight/insightface)
     :param thresholds:
     :param embeddings1:
@@ -111,9 +111,9 @@ def calculate_val(thresholds, embeddings1, embeddings2, actual_issame, far_targe
     :param far_target:
     :param nrof_folds:
     :return:
-    '''
-    assert (embeddings1.shape[0] == embeddings2.shape[0])
-    assert (embeddings1.shape[1] == embeddings2.shape[1])
+    """
+    assert embeddings1.shape[0] == embeddings2.shape[0]
+    assert embeddings1.shape[1] == embeddings2.shape[1]
     nrof_pairs = min(len(actual_issame), embeddings1.shape[0])
     nrof_thresholds = len(thresholds)
     k_fold = KFold(n_splits=nrof_folds, shuffle=False)
@@ -132,7 +132,7 @@ def calculate_val(thresholds, embeddings1, embeddings2, actual_issame, far_targe
         for threshold_idx, threshold in enumerate(thresholds):
             _, far_train[threshold_idx] = calculate_val_far(threshold, dist[train_set], actual_issame[train_set])
         if np.max(far_train) >= far_target:
-            f = interpolate.interp1d(far_train, thresholds, kind='slinear')
+            f = interpolate.interp1d(far_train, thresholds, kind="slinear")
             threshold = f(far_target)
         else:
             threshold = 0.0
@@ -161,8 +161,14 @@ def evaluate(embeddings, actual_issame, nrof_folds=10, pca=0):
     thresholds = np.arange(0, 4, 0.01)
     embeddings1 = embeddings[0::2]
     embeddings2 = embeddings[1::2]
-    tpr, fpr, accuracy, best_thresholds = calculate_roc(thresholds, embeddings1, embeddings2,
-                                                        np.asarray(actual_issame), nrof_folds=nrof_folds, pca=pca)
+    tpr, fpr, accuracy, best_thresholds = calculate_roc(
+        thresholds,
+        embeddings1,
+        embeddings2,
+        np.asarray(actual_issame),
+        nrof_folds=nrof_folds,
+        pca=pca,
+    )
     #     thresholds = np.arange(0, 4, 0.001)
     #     val, val_std, far = calculate_val(thresholds, embeddings1, embeddings2,
     #                                       np.asarray(actual_issame), 1e-3, nrof_folds=nrof_folds)

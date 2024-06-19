@@ -4,7 +4,11 @@
 @contact: sherlockliao01@gmail.com
 """
 
-__all__ = ['ToTensor', 'RandomPatch', 'AugMix', ]
+__all__ = [
+    "ToTensor",
+    "RandomPatch",
+    "AugMix",
+]
 
 import math
 import random
@@ -13,7 +17,7 @@ from collections import deque
 import numpy as np
 import torch
 
-from .functional import to_tensor, augmentations
+from .functional import augmentations, to_tensor
 
 
 class ToTensor(object):
@@ -38,7 +42,7 @@ class ToTensor(object):
         return to_tensor(pic)
 
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__ + "()"
 
 
 class RandomPatch(object):
@@ -54,9 +58,16 @@ class RandomPatch(object):
           for Person Re-Identification. arXiv preprint, 2019.
     """
 
-    def __init__(self, prob_happen=0.5, pool_capacity=50000, min_sample_size=100,
-                 patch_min_area=0.01, patch_max_area=0.5, patch_min_ratio=0.1, prob_flip_leftright=0.5,
-                 ):
+    def __init__(
+        self,
+        prob_happen=0.5,
+        pool_capacity=50000,
+        min_sample_size=100,
+        patch_min_area=0.01,
+        patch_max_area=0.5,
+        patch_min_ratio=0.1,
+        prob_flip_leftright=0.5,
+    ):
         self.prob_happen = prob_happen
 
         self.patch_min_area = patch_min_area
@@ -72,7 +83,7 @@ class RandomPatch(object):
         area = W * H
         for attempt in range(100):
             target_area = random.uniform(self.patch_min_area, self.patch_max_area) * area
-            aspect_ratio = random.uniform(self.patch_min_ratio, 1. / self.patch_min_ratio)
+            aspect_ratio = random.uniform(self.patch_min_ratio, 1.0 / self.patch_min_ratio)
             h = int(round(math.sqrt(target_area * aspect_ratio)))
             w = int(round(math.sqrt(target_area / aspect_ratio)))
             if w < W and h < H:
@@ -92,7 +103,7 @@ class RandomPatch(object):
         if w is not None and h is not None:
             x1 = random.randint(0, W - w)
             y1 = random.randint(0, H - h)
-            new_patch = img[..., y1:y1 + h, x1:x1 + w]
+            new_patch = img[..., y1 : y1 + h, x1 : x1 + w]
             self.patchpool.append(new_patch)
 
         if len(self.patchpool) < self.min_sample_size:
@@ -107,14 +118,13 @@ class RandomPatch(object):
         x1 = random.randint(0, W - patchW)
         y1 = random.randint(0, H - patchH)
         patch = self.transform_patch(patch)
-        img[..., y1:y1 + patchH, x1:x1 + patchW] = patch
+        img[..., y1 : y1 + patchH, x1 : x1 + patchW] = patch
 
         return img
 
 
 class AugMix(object):
-    """ Perform AugMix augmentation and compute mixture.
-    """
+    """Perform AugMix augmentation and compute mixture."""
 
     def __init__(self, prob=0.5, aug_prob_coeff=0.1, mixture_width=3, mixture_depth=1, aug_severity=1):
         """
@@ -144,8 +154,7 @@ class AugMix(object):
             # Avoid the warning: the given NumPy array is not writeable
             return np.asarray(image).copy()
 
-        ws = np.float32(
-            np.random.dirichlet([self.aug_prob_coeff] * self.mixture_width))
+        ws = np.float32(np.random.dirichlet([self.aug_prob_coeff] * self.mixture_width))
         m = np.float32(np.random.beta(self.aug_prob_coeff, self.aug_prob_coeff))
 
         mix = np.zeros([image.size[1], image.size[0], 3])

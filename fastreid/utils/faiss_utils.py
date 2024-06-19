@@ -8,17 +8,13 @@ import torch
 def swig_ptr_from_FloatTensor(x):
     assert x.is_contiguous()
     assert x.dtype == torch.float32
-    return faiss.cast_integer_to_float_ptr(
-        x.storage().data_ptr() + x.storage_offset() * 4
-    )
+    return faiss.cast_integer_to_float_ptr(x.storage().data_ptr() + x.storage_offset() * 4)
 
 
 def swig_ptr_from_LongTensor(x):
     assert x.is_contiguous()
     assert x.dtype == torch.int64, "dtype=%s" % x.dtype
-    return faiss.cast_integer_to_long_ptr(
-        x.storage().data_ptr() + x.storage_offset() * 8
-    )
+    return faiss.cast_integer_to_long_ptr(x.storage().data_ptr() + x.storage_offset() * 8)
 
 
 def search_index_pytorch(index, x, k, D=None, I=None):
@@ -113,9 +109,7 @@ def index_init_gpu(ngpus, feat_dim):
         flat_config.append(cfg)
 
     res = [faiss.StandardGpuResources() for i in range(ngpus)]
-    indexes = [
-        faiss.GpuIndexFlatL2(res[i], feat_dim, flat_config[i]) for i in range(ngpus)
-    ]
+    indexes = [faiss.GpuIndexFlatL2(res[i], feat_dim, flat_config[i]) for i in range(ngpus)]
     index = faiss.IndexShards(feat_dim)
     for sub_index in indexes:
         index.add_shard(sub_index)

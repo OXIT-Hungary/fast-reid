@@ -10,17 +10,18 @@ import time
 from collections import Counter
 
 import torch
-from torch import nn
-from torch.nn.parallel import DistributedDataParallel
-
 from fastreid.evaluation.testing import flatten_results_dict
 from fastreid.solver import optim
 from fastreid.utils import comm
-from fastreid.utils.checkpoint import PeriodicCheckpointer as _PeriodicCheckpointer
+from fastreid.utils.checkpoint import \
+    PeriodicCheckpointer as _PeriodicCheckpointer
 from fastreid.utils.events import EventStorage, EventWriter, get_event_storage
 from fastreid.utils.file_io import PathManager
-from fastreid.utils.precision_bn import update_bn_stats, get_bn_modules
+from fastreid.utils.precision_bn import get_bn_modules, update_bn_stats
 from fastreid.utils.timer import Timer
+from torch import nn
+from torch.nn.parallel import DistributedDataParallel
+
 from .train_loop import HookBase
 
 __all__ = [
@@ -45,8 +46,16 @@ class CallbackHook(HookBase):
     Create a hook using callback functions provided by the user.
     """
 
-    def __init__(self, *, before_train=None, after_train=None, before_epoch=None, after_epoch=None,
-                 before_step=None, after_step=None):
+    def __init__(
+        self,
+        *,
+        before_train=None,
+        after_train=None,
+        before_epoch=None,
+        after_epoch=None,
+        before_step=None,
+        after_step=None,
+    ):
         """
         Each argument is a function that takes one argument: the trainer.
         """
@@ -172,9 +181,7 @@ class PeriodicWriter(HookBase):
         self._period = period
 
     def after_step(self):
-        if (self.trainer.iter + 1) % self._period == 0 or (
-                self.trainer.iter == self.trainer.max_iter - 1
-        ):
+        if (self.trainer.iter + 1) % self._period == 0 or (self.trainer.iter == self.trainer.max_iter - 1):
             for writer in self._writers:
                 writer.write()
 
@@ -207,7 +214,7 @@ class PeriodicCheckpointer(_PeriodicCheckpointer, HookBase):
         # No way to use **kwargs
         storage = get_event_storage()
         metric_dict = dict(
-            metric=storage.latest()[self.metric_name][0] if self.metric_name in storage.latest() else -1
+            metric=(storage.latest()[self.metric_name][0] if self.metric_name in storage.latest() else -1)
         )
         self.step(self.trainer.epoch, **metric_dict)
 
@@ -311,9 +318,7 @@ class AutogradProfiler(HookBase):
         if self._profiler is None:
             return
         self._profiler.__exit__(None, None, None)
-        out_file = os.path.join(
-            self._output_dir, "profiler-trace-iter{}.json".format(self.trainer.iter)
-        )
+        out_file = os.path.join(self._output_dir, "profiler-trace-iter{}.json".format(self.trainer.iter))
         if "://" not in out_file:
             self._profiler.export_chrome_trace(out_file)
         else:
@@ -351,9 +356,7 @@ class EvalHook(HookBase):
         results = self._func()
 
         if results:
-            assert isinstance(
-                results, dict
-            ), "Eval function must return a dict. Got {} instead.".format(results)
+            assert isinstance(results, dict), "Eval function must return a dict. Got {} instead.".format(results)
 
             flattened_results = flatten_results_dict(results)
             for k, v in flattened_results.items():
@@ -408,9 +411,7 @@ class PreciseBN(HookBase):
         """
         self._logger = logging.getLogger(__name__)
         if len(get_bn_modules(model)) == 0:
-            self._logger.info(
-                "PreciseBN is disabled because model does not contain BN layers in training mode."
-            )
+            self._logger.info("PreciseBN is disabled because model does not contain BN layers in training mode.")
             self._disabled = True
             return
 
@@ -440,9 +441,7 @@ class PreciseBN(HookBase):
         def data_loader():
             for num_iter in itertools.count(1):
                 if num_iter % 100 == 0:
-                    self._logger.info(
-                        "Running precise-BN ... {}/{} iterations.".format(num_iter, self._num_iter)
-                    )
+                    self._logger.info("Running precise-BN ... {}/{} iterations.".format(num_iter, self._num_iter))
                 # This way we can reuse the same iterator
                 yield next(self._data_iter)
 
@@ -478,7 +477,7 @@ class LayerFreeze(HookBase):
     def freeze_specific_layer(self):
         for layer in self.freeze_layers:
             if not hasattr(self.model, layer):
-                self._logger.info(f'{layer} is not an attribute of the model, will skip this layer')
+                self._logger.info(f"{layer} is not an attribute of the model, will skip this layer")
 
         for name, module in self.model.named_children():
             if name in self.freeze_layers:
@@ -501,7 +500,14 @@ class LayerFreeze(HookBase):
 
 
 class SWA(HookBase):
-    def __init__(self, swa_start: int, swa_freq: int, swa_lr_factor: float, eta_min: float, lr_sched=False, ):
+    def __init__(
+        self,
+        swa_start: int,
+        swa_freq: int,
+        swa_lr_factor: float,
+        eta_min: float,
+        lr_sched=False,
+    ):
         self.swa_start = swa_start
         self.swa_freq = swa_freq
         self.swa_lr_factor = swa_lr_factor

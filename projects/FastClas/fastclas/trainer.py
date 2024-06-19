@@ -8,14 +8,15 @@ import json
 import logging
 import os
 
-from fastreid.data.build import _root
-from fastreid.data.build import build_reid_train_loader, build_reid_test_loader
+from fastreid.data.build import (_root, build_reid_test_loader,
+                                 build_reid_train_loader)
 from fastreid.data.datasets import DATASET_REGISTRY
 from fastreid.data.transforms import build_transforms
 from fastreid.engine import DefaultTrainer
 from fastreid.evaluation.clas_evaluator import ClasEvaluator
 from fastreid.utils import comm
 from fastreid.utils.checkpoint import PathManager
+
 from .dataset import ClasDataset
 
 

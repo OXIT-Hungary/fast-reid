@@ -12,12 +12,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from .faiss_utils import (
-    index_init_cpu,
-    index_init_gpu,
-    search_index_pytorch,
-    search_raw_array_pytorch,
-)
+from .faiss_utils import (index_init_cpu, index_init_gpu, search_index_pytorch,
+                          search_raw_array_pytorch)
 
 __all__ = [
     "build_dist",
@@ -39,8 +35,11 @@ def build_dist(feat_1: torch.Tensor, feat_2: torch.Tensor, metric: str = "euclid
     Returns:
         numpy.ndarray: distance matrix.
     """
-    assert metric in ["cosine", "euclidean", "jaccard"], "Expected metrics are cosine, euclidean and jaccard, " \
-                                                         "but got {}".format(metric)
+    assert metric in [
+        "cosine",
+        "euclidean",
+        "jaccard",
+    ], "Expected metrics are cosine, euclidean and jaccard, " "but got {}".format(metric)
 
     if metric == "euclidean":
         return compute_euclidean_distance(feat_1, feat_2)
@@ -51,7 +50,7 @@ def build_dist(feat_1: torch.Tensor, feat_2: torch.Tensor, metric: str = "euclid
     elif metric == "jaccard":
         feat = torch.cat((feat_1, feat_2), dim=0)
         dist = compute_jaccard_distance(feat, k1=kwargs["k1"], k2=kwargs["k2"], search_option=0)
-        return dist[: feat_1.size(0), feat_1.size(0):]
+        return dist[: feat_1.size(0), feat_1.size(0) :]
 
 
 def k_reciprocal_neigh(initial_rank, i, k1):
@@ -108,34 +107,26 @@ def compute_jaccard_distance(features, k1=20, k2=6, search_option=0, fp16=False)
         k_reciprocal_expansion_index = k_reciprocal_index
         for candidate in k_reciprocal_index:
             candidate_k_reciprocal_index = nn_k1_half[candidate]
-            if len(
-                    np.intersect1d(candidate_k_reciprocal_index, k_reciprocal_index)
-            ) > 2 / 3 * len(candidate_k_reciprocal_index):
-                k_reciprocal_expansion_index = np.append(
-                    k_reciprocal_expansion_index, candidate_k_reciprocal_index
-                )
+            if len(np.intersect1d(candidate_k_reciprocal_index, k_reciprocal_index)) > 2 / 3 * len(
+                candidate_k_reciprocal_index
+            ):
+                k_reciprocal_expansion_index = np.append(k_reciprocal_expansion_index, candidate_k_reciprocal_index)
 
-        k_reciprocal_expansion_index = np.unique(
-            k_reciprocal_expansion_index
-        )  # element-wise unique
+        k_reciprocal_expansion_index = np.unique(k_reciprocal_expansion_index)  # element-wise unique
 
         x = features[i].unsqueeze(0).contiguous()
         y = features[k_reciprocal_expansion_index]
         m, n = x.size(0), y.size(0)
         dist = (
-                torch.pow(x, 2).sum(dim=1, keepdim=True).expand(m, n)
-                + torch.pow(y, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+            torch.pow(x, 2).sum(dim=1, keepdim=True).expand(m, n)
+            + torch.pow(y, 2).sum(dim=1, keepdim=True).expand(n, m).t()
         )
         dist.addmm_(x, y.t(), beta=1, alpha=-2)
 
         if fp16:
-            V[i, k_reciprocal_expansion_index] = (
-                F.softmax(-dist, dim=1).view(-1).cpu().numpy().astype(mat_type)
-            )
+            V[i, k_reciprocal_expansion_index] = F.softmax(-dist, dim=1).view(-1).cpu().numpy().astype(mat_type)
         else:
-            V[i, k_reciprocal_expansion_index] = (
-                F.softmax(-dist, dim=1).view(-1).cpu().numpy()
-            )
+            V[i, k_reciprocal_expansion_index] = F.softmax(-dist, dim=1).view(-1).cpu().numpy()
 
     del nn_k1, nn_k1_half, x, y
     features = features.cpu()
@@ -177,8 +168,8 @@ def compute_jaccard_distance(features, k1=20, k2=6, search_option=0, fp16=False)
 def compute_euclidean_distance(features, others):
     m, n = features.size(0), others.size(0)
     dist_m = (
-            torch.pow(features, 2).sum(dim=1, keepdim=True).expand(m, n)
-            + torch.pow(others, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+        torch.pow(features, 2).sum(dim=1, keepdim=True).expand(m, n)
+        + torch.pow(others, 2).sum(dim=1, keepdim=True).expand(n, m).t()
     )
     dist_m.addmm_(1, -2, features, others.t())
 

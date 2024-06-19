@@ -12,8 +12,13 @@ import torch
 import torch.nn.functional as F
 
 
-def aqe(query_feat: torch.tensor, gallery_feat: torch.tensor,
-        qe_times: int = 1, qe_k: int = 10, alpha: float = 3.0):
+def aqe(
+    query_feat: torch.tensor,
+    gallery_feat: torch.tensor,
+    qe_times: int = 1,
+    qe_k: int = 10,
+    alpha: float = 3.0,
+):
     """
     Combining the retrieved topk nearest neighbors with the original query and doing another retrieval.
     c.f. https://www.robots.ox.ac.uk/~vgg/publications/papers/chum07b.pdf

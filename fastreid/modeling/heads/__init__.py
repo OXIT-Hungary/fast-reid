@@ -5,7 +5,6 @@
 """
 
 from .build import REID_HEADS_REGISTRY, build_heads
-
+from .clas_head import ClasHead
 # import all the meta_arch, so they will be registered
 from .embedding_head import EmbeddingHead
-from .clas_head import ClasHead

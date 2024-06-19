@@ -9,13 +9,12 @@
 
 
 import itertools
-from typing import Optional, List, Callable
+from typing import Callable, List, Optional
 
 import numpy as np
 import torch
-from torch.utils.data.sampler import Sampler
-
 from fastreid.utils import comm
+from torch.utils.data.sampler import Sampler
 
 
 class ImbalancedDatasetSampler(Sampler):
@@ -25,8 +24,13 @@ class ImbalancedDatasetSampler(Sampler):
         size: number of samples to draw
     """
 
-    def __init__(self, data_source: List, size: int = None, seed: Optional[int] = None,
-                 callback_get_label: Callable = None):
+    def __init__(
+        self,
+        data_source: List,
+        size: int = None,
+        seed: Optional[int] = None,
+        callback_get_label: Callable = None,
+    ):
         self.data_source = data_source
         # consider all elements in the dataset
         self.indices = list(range(len(data_source)))

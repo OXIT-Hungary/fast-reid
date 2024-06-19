@@ -5,9 +5,8 @@
 """
 
 import torch
-from torch.utils.data import Dataset
-
 from fastreid.data.data_utils import read_image
+from torch.utils.data import Dataset
 
 
 class AttrDataset(Dataset):
@@ -25,7 +24,8 @@ class AttrDataset(Dataset):
         img_path, labels = self.img_items[index]
         img = read_image(img_path)
 
-        if self.transform is not None: img = self.transform(img)
+        if self.transform is not None:
+            img = self.transform(img)
 
         labels = torch.as_tensor(labels)
 

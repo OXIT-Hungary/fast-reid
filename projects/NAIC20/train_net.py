@@ -7,15 +7,13 @@
 import logging
 import sys
 
-sys.path.append('.')
+sys.path.append(".")
 
 from fastreid.config import get_cfg
-
-from fastreid.engine import default_argument_parser, default_setup, launch
-from fastreid.utils.checkpoint import Checkpointer
-from fastreid.engine import DefaultTrainer
 from fastreid.data import build_reid_train_loader
-
+from fastreid.engine import (DefaultTrainer, default_argument_parser,
+                             default_setup, launch)
+from fastreid.utils.checkpoint import Checkpointer
 from naic import *
 
 

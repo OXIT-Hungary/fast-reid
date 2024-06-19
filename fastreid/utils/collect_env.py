@@ -13,8 +13,8 @@ import subprocess
 import sys
 from collections import defaultdict
 
-import PIL
 import numpy as np
+import PIL
 import torch
 import torchvision
 from tabulate import tabulate
@@ -43,9 +43,7 @@ def detect_compute_compatibility(CUDA_HOME, so_file):
     try:
         cuobjdump = os.path.join(CUDA_HOME, "bin", "cuobjdump")
         if os.path.isfile(cuobjdump):
-            output = subprocess.check_output(
-                "'{}' --list-elf '{}'".format(cuobjdump, so_file), shell=True
-            )
+            output = subprocess.check_output("'{}' --list-elf '{}'".format(cuobjdump, so_file), shell=True)
             output = output.decode("utf-8").strip().split("\n")
             sm = []
             for line in output:
@@ -84,9 +82,7 @@ def collect_env_info():
     try:
         import fastreid  # noqa
 
-        data.append(
-            ("fastreid", fastreid.__version__ + " @" + os.path.dirname(fastreid.__file__))
-        )
+        data.append(("fastreid", fastreid.__version__ + " @" + os.path.dirname(fastreid.__file__)))
     except ImportError:
         data.append(("fastreid", "failed to import"))
 

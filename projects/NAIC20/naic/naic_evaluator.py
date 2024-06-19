@@ -12,7 +12,6 @@ from collections import defaultdict
 import numpy as np
 import torch
 import torch.nn.functional as F
-
 from fastreid.evaluation import ReidEvaluator
 from fastreid.evaluation.query_expansion import aqe
 from fastreid.utils import comm
@@ -64,12 +63,12 @@ class NaicEvaluator(ReidEvaluator):
 
         features = torch.cat(features, dim=0)
         # query feature, person ids and camera ids
-        query_features = features[:self._num_query]
-        query_pids = np.asarray(pids[:self._num_query])
+        query_features = features[: self._num_query]
+        query_pids = np.asarray(pids[: self._num_query])
 
         # gallery features, person ids and camera ids
-        gallery_features = features[self._num_query:]
-        gallery_pids = np.asarray(pids[self._num_query:])
+        gallery_features = features[self._num_query :]
+        gallery_pids = np.asarray(pids[self._num_query :])
 
         if self.cfg.TEST.AQE.ENABLED:
             logger.info("Test with AQE setting")
@@ -106,7 +105,7 @@ class NaicEvaluator(ReidEvaluator):
         for i in range(topk_indices.shape[0]):
             results[query_pids[i]].extend(gallery_pids[topk_indices[i]])
 
-        with open(os.path.join(self.cfg.OUTPUT_DIR, "submit.json"), 'w') as f:
+        with open(os.path.join(self.cfg.OUTPUT_DIR, "submit.json"), "w") as f:
             json.dump(results, f)
 
         return {}

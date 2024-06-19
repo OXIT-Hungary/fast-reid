@@ -12,32 +12,32 @@ Registry for datasets
 It must returns an instance of :class:`Backbone`.
 """
 
+from .AirportALERT import AirportALERT
+from .caviara import CAVIARa
 # Person re-id datasets
 from .cuhk03 import CUHK03
+from .cuhk_sysu import cuhkSYSU
 from .dukemtmcreid import DukeMTMC
+from .grid import GRID
+from .iLIDS import iLIDS
+from .lpw import LPW
 from .market1501 import Market1501
 from .msmt17 import MSMT17
-from .AirportALERT import AirportALERT
-from .iLIDS import iLIDS
+from .pes3d import PeS3D
 from .pku import PKU
 from .prai import PRAI
 from .prid import PRID
-from .grid import GRID
 from .saivt import SAIVT
 from .sensereid import SenseReID
+from .shinpuhkan import Shinpuhkan
 from .sysu_mm import SYSU_mm
 from .thermalworld import Thermalworld
-from .pes3d import PeS3D
-from .caviara import CAVIARa
-from .viper import VIPeR
-from .lpw import LPW
-from .shinpuhkan import Shinpuhkan
-from .wildtracker import WildTrackCrop
-from .cuhk_sysu import cuhkSYSU
-
+from .vehicleid import (LargeVehicleID, MediumVehicleID, SmallVehicleID,
+                        VehicleID)
 # Vehicle re-id datasets
 from .veri import VeRi
-from .vehicleid import VehicleID, SmallVehicleID, MediumVehicleID, LargeVehicleID
-from .veriwild import VeRiWild, SmallVeRiWild, MediumVeRiWild, LargeVeRiWild
+from .veriwild import LargeVeRiWild, MediumVeRiWild, SmallVeRiWild, VeRiWild
+from .viper import VIPeR
+from .wildtracker import WildTrackCrop
 
 __all__ = [k for k in globals().keys() if "builtin" not in k and not k.startswith("_")]

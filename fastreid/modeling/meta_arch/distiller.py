@@ -8,9 +8,9 @@ import logging
 
 import torch
 import torch.nn.functional as F
-
 from fastreid.config import get_cfg
-from fastreid.modeling.meta_arch import META_ARCH_REGISTRY, build_model, Baseline
+from fastreid.modeling.meta_arch import (META_ARCH_REGISTRY, Baseline,
+                                         build_model)
 from fastreid.utils.checkpoint import Checkpointer
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class Distiller(Baseline):
             for param in model_self.parameters():
                 param.requires_grad_(False)
 
-            if cfg_self.MODEL.WEIGHTS != '':
+            if cfg_self.MODEL.WEIGHTS != "":
                 logger.info("Loading self distillation model weights ...")
                 Checkpointer(model_self).load(cfg_self.MODEL.WEIGHTS)
             else:
@@ -80,7 +80,7 @@ class Distiller(Baseline):
         Momentum update of the key encoder
         """
         for param_q, param_k in zip(self.parameters(), self.model_ts[0].parameters()):
-            param_k.data = param_k.data * m + param_q.data * (1. - m)
+            param_k.data = param_k.data * m + param_q.data * (1.0 - m)
 
     def forward(self, batched_inputs):
         if self.training:
@@ -90,7 +90,8 @@ class Distiller(Baseline):
             assert "targets" in batched_inputs, "Labels are missing in training!"
             targets = batched_inputs["targets"].to(self.device)
 
-            if targets.sum() < 0: targets.zero_()
+            if targets.sum() < 0:
+                targets.zero_()
 
             s_outputs = self.heads(s_feat, targets)
 
@@ -118,10 +119,10 @@ class Distiller(Baseline):
         """
         loss_dict = super().losses(s_outputs, gt_labels)
 
-        s_logits = s_outputs['pred_class_logits']
-        loss_jsdiv = 0.
+        s_logits = s_outputs["pred_class_logits"]
+        loss_jsdiv = 0.0
         for t_output in t_outputs:
-            t_logits = t_output['pred_class_logits'].detach()
+            t_logits = t_output["pred_class_logits"].detach()
             loss_jsdiv += self.jsdiv_loss(s_logits, t_logits)
 
         loss_dict["loss_jsdiv"] = loss_jsdiv / len(t_outputs)
@@ -132,7 +133,7 @@ class Distiller(Baseline):
     def _kldiv(y_s, y_t, t):
         p_s = F.log_softmax(y_s / t, dim=1)
         p_t = F.softmax(y_t / t, dim=1)
-        loss = F.kl_div(p_s, p_t, reduction="sum") * (t ** 2) / y_s.shape[0]
+        loss = F.kl_div(p_s, p_t, reduction="sum") * (t**2) / y_s.shape[0]
         return loss
 
     def jsdiv_loss(self, y_s, y_t, t=16):

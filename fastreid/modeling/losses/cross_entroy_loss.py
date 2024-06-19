@@ -5,7 +5,6 @@
 """
 import torch
 import torch.nn.functional as F
-
 from fastreid.utils.events import get_event_storage
 
 
@@ -22,7 +21,7 @@ def log_accuracy(pred_class_logits, gt_classes, topk=(1,)):
     ret = []
     for k in topk:
         correct_k = correct[:k].view(-1).float().sum(dim=0, keepdim=True)
-        ret.append(correct_k.mul_(1. / bsz))
+        ret.append(correct_k.mul_(1.0 / bsz))
 
     storage = get_event_storage()
     storage.put_scalar("cls_accuracy", ret[0])

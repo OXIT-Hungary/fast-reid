@@ -57,7 +57,7 @@ def update_bn_stats(model, data_loader, num_iters: int = 200):
     running_var = [torch.zeros_like(bn.running_var) for bn in bn_layers]
 
     for ind, inputs in enumerate(itertools.islice(data_loader, num_iters)):
-        inputs['targets'].fill_(-1)
+        inputs["targets"].fill_(-1)
         with torch.no_grad():  # No need to backward
             model(inputs)
         for i, bn in enumerate(bn_layers):
@@ -65,9 +65,10 @@ def update_bn_stats(model, data_loader, num_iters: int = 200):
             running_mean[i] += (bn.running_mean - running_mean[i]) / (ind + 1)
             running_var[i] += (bn.running_var - running_var[i]) / (ind + 1)
             # We compute the "average of variance" across iterations.
-    assert ind == num_iters - 1, (
-        "update_bn_stats is meant to run for {} iterations, "
-        "but the dataloader stops at {} iterations.".format(num_iters, ind)
+    assert (
+        ind == num_iters - 1
+    ), "update_bn_stats is meant to run for {} iterations, " "but the dataloader stops at {} iterations.".format(
+        num_iters, ind
     )
 
     for i, bn in enumerate(bn_layers):
@@ -88,7 +89,5 @@ def get_bn_modules(model):
         list[nn.Module]: all BN modules in the model.
     """
     # Finds all the bn layers.
-    bn_layers = [
-        m for m in model.modules() if m.training and isinstance(m, BN_MODULE_TYPES)
-    ]
+    bn_layers = [m for m in model.modules() if m.training and isinstance(m, BN_MODULE_TYPES)]
     return bn_layers

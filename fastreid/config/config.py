@@ -58,9 +58,7 @@ class CfgNode(_CfgNode):
                 logger = logging.getLogger(__name__)
                 logger.warning(
                     "Loading config {} with yaml.unsafe_load. Your machine may "
-                    "be at risk if the file contains malicious content.".format(
-                        filename
-                    )
+                    "be at risk if the file contains malicious content.".format(filename)
                 )
                 f.close()
                 with open(filename, "r") as f:
@@ -70,9 +68,7 @@ class CfgNode(_CfgNode):
             # merge dict a into dict b. values in a will overwrite b.
             for k, v in a.items():
                 if isinstance(v, dict) and k in b:
-                    assert isinstance(
-                        b[k], dict
-                    ), "Cannot inherit key '{}' from base!".format(k)
+                    assert isinstance(b[k], dict), "Cannot inherit key '{}' from base!".format(k)
                     merge_a_into_b(v, b[k])
                 else:
                     b[k] = v
@@ -81,16 +77,10 @@ class CfgNode(_CfgNode):
             base_cfg_file = cfg[BASE_KEY]
             if base_cfg_file.startswith("~"):
                 base_cfg_file = os.path.expanduser(base_cfg_file)
-            if not any(
-                    map(base_cfg_file.startswith, ["/", "https://", "http://"])
-            ):
+            if not any(map(base_cfg_file.startswith, ["/", "https://", "http://"])):
                 # the path to base cfg is relative to the config file itself.
-                base_cfg_file = os.path.join(
-                    os.path.dirname(filename), base_cfg_file
-                )
-            base_cfg = CfgNode.load_yaml_with_base(
-                base_cfg_file, allow_unsafe=allow_unsafe
-            )
+                base_cfg_file = os.path.join(os.path.dirname(filename), base_cfg_file)
+            base_cfg = CfgNode.load_yaml_with_base(base_cfg_file, allow_unsafe=allow_unsafe)
             del cfg[BASE_KEY]
 
             merge_a_into_b(cfg, base_cfg)
@@ -105,9 +95,7 @@ class CfgNode(_CfgNode):
             allow_unsafe: whether to allow loading the config file with
                 `yaml.unsafe_load`.
         """
-        loaded_cfg = CfgNode.load_yaml_with_base(
-            cfg_filename, allow_unsafe=allow_unsafe
-        )
+        loaded_cfg = CfgNode.load_yaml_with_base(cfg_filename, allow_unsafe=allow_unsafe)
         loaded_cfg = type(self)(loaded_cfg)
         self.merge_from_other_cfg(loaded_cfg)
 
@@ -117,9 +105,7 @@ class CfgNode(_CfgNode):
         Args:
             cfg_other (CfgNode): configs to merge from.
         """
-        assert (
-                BASE_KEY not in cfg_other
-        ), "The reserved key '{}' can only be used in files!".format(BASE_KEY)
+        assert BASE_KEY not in cfg_other, "The reserved key '{}' can only be used in files!".format(BASE_KEY)
         return super().merge_from_other_cfg(cfg_other)
 
     def merge_from_list(self, cfg_list: list):
@@ -128,9 +114,7 @@ class CfgNode(_CfgNode):
             cfg_list (list): list of configs to merge from.
         """
         keys = set(cfg_list[0::2])
-        assert (
-                BASE_KEY not in keys
-        ), "The reserved key '{}' can only be used in files!".format(BASE_KEY)
+        assert BASE_KEY not in keys, "The reserved key '{}' can only be used in files!".format(BASE_KEY)
         return super().merge_from_list(cfg_list)
 
     def __setattr__(self, name: str, val: Any):
@@ -141,9 +125,7 @@ class CfgNode(_CfgNode):
                     return
                 raise KeyError(
                     "Computed attributed '{}' already exists "
-                    "with a different value! old={}, new={}.".format(
-                        name, old_val, val
-                    )
+                    "with a different value! old={}, new={}.".format(name, old_val, val)
                 )
             self[name] = val
         else:
@@ -218,14 +200,12 @@ def configurable(init_func=None, *, from_config=None):
     def check_docstring(func):
         if func.__module__.startswith("fastreid."):
             assert (
-                    func.__doc__ is not None and "experimental" in func.__doc__.lower()
+                func.__doc__ is not None and "experimental" in func.__doc__.lower()
             ), f"configurable {func} should be marked experimental"
 
     if init_func is not None:
         assert (
-                inspect.isfunction(init_func)
-                and from_config is None
-                and init_func.__name__ == "__init__"
+            inspect.isfunction(init_func) and from_config is None and init_func.__name__ == "__init__"
         ), "Incorrect use of @configurable. Check API documentation for examples."
         check_docstring(init_func)
 
@@ -234,9 +214,7 @@ def configurable(init_func=None, *, from_config=None):
             try:
                 from_config_func = type(self).from_config
             except AttributeError as e:
-                raise AttributeError(
-                    "Class with @configurable must have a 'from_config' classmethod."
-                ) from e
+                raise AttributeError("Class with @configurable must have a 'from_config' classmethod.") from e
             if not inspect.ismethod(from_config_func):
                 raise TypeError("Class with @configurable must have a 'from_config' classmethod.")
 
@@ -251,9 +229,7 @@ def configurable(init_func=None, *, from_config=None):
     else:
         if from_config is None:
             return configurable  # @configurable() is made equivalent to @configurable
-        assert inspect.isfunction(
-            from_config
-        ), "from_config argument of configurable must be a function!"
+        assert inspect.isfunction(from_config), "from_config argument of configurable must be a function!"
 
         def wrapper(orig_func):
             check_docstring(orig_func)
@@ -285,8 +261,7 @@ def _get_args_from_config(from_config_func, *args, **kwargs):
             name = f"{from_config_func.__self__}.from_config"
         raise TypeError(f"{name} must take 'cfg' as the first argument!")
     support_var_arg = any(
-        param.kind in [param.VAR_POSITIONAL, param.VAR_KEYWORD]
-        for param in signature.parameters.values()
+        param.kind in [param.VAR_POSITIONAL, param.VAR_KEYWORD] for param in signature.parameters.values()
     )
     if support_var_arg:  # forward all arguments to from_config, if from_config accepts them
         ret = from_config_func(*args, **kwargs)

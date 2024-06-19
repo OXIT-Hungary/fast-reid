@@ -6,7 +6,9 @@ import os
 import time
 from collections import defaultdict
 from contextlib import contextmanager
+
 import torch
+
 from .file_io import PathManager
 from .history_buffer import HistoryBuffer
 
@@ -217,9 +219,7 @@ class CommonMetricPrinter(EventWriter):
             iter_time = None
             # estimate eta on our own - more noisy
             if self._last_write is not None:
-                estimate_iter_time = (time.perf_counter() - self._last_write[1]) / (
-                    iteration - self._last_write[0]
-                )
+                estimate_iter_time = (time.perf_counter() - self._last_write[1]) / (iteration - self._last_write[0])
                 eta_seconds = estimate_iter_time * (self._max_iter - iteration - 1)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
             self._last_write = (iteration, time.perf_counter())
@@ -241,11 +241,7 @@ class CommonMetricPrinter(EventWriter):
                 epoch=epoch,
                 iter=iteration,
                 losses="  ".join(
-                    [
-                        "{}: {:.4g}".format(k, v.median(200))
-                        for k, v in storage.histories().items()
-                        if "loss" in k
-                    ]
+                    ["{}: {:.4g}".format(k, v.median(200)) for k, v in storage.histories().items() if "loss" in k]
                 ),
                 time="time: {:.4f}  ".format(iter_time) if iter_time is not None else "",
                 data_time="data_time: {:.4f}  ".format(data_time) if data_time is not None else "",
@@ -307,9 +303,7 @@ class EventStorage:
 
         existing_hint = self._smoothing_hints.get(name)
         if existing_hint is not None:
-            assert (
-                existing_hint == smoothing_hint
-            ), "Scalar {} was put with a different smoothing_hint!".format(name)
+            assert existing_hint == smoothing_hint, "Scalar {} was put with a different smoothing_hint!".format(name)
         else:
             self._smoothing_hints[name] = smoothing_hint
 
@@ -344,7 +338,7 @@ class EventStorage:
             max=ht_max,
             num=len(hist_tensor),
             sum=float(hist_tensor.sum()),
-            sum_squares=float(torch.sum(hist_tensor ** 2)),
+            sum_squares=float(torch.sum(hist_tensor**2)),
             bucket_limits=hist_edges[1:].tolist(),
             bucket_counts=hist_counts.tolist(),
             global_step=self._iter,

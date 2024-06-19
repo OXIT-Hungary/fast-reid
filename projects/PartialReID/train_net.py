@@ -9,13 +9,12 @@ import logging
 import os
 import sys
 
-sys.path.append('.')
+sys.path.append(".")
 
 from fastreid.config import get_cfg
-from fastreid.engine import DefaultTrainer, default_argument_parser, default_setup, launch
+from fastreid.engine import (DefaultTrainer, default_argument_parser,
+                             default_setup, hooks, launch)
 from fastreid.utils.checkpoint import Checkpointer
-from fastreid.engine import hooks
-
 from partialreid import *
 
 
