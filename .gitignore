@@ -1,7 +1,7 @@
 
 logs
 
-**/output/
+**/outputs/
 
 # compilation and distribution
 __pycache__
