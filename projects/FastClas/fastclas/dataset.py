@@ -4,9 +4,8 @@
 @contact: sherlockliao01@gmail.com
 """
 
-from torch.utils.data import Dataset
-
 from fastreid.data.data_utils import read_image
+from torch.utils.data import Dataset
 
 
 class ClasDataset(Dataset):
@@ -37,7 +36,8 @@ class ClasDataset(Dataset):
         img_path = img_item[0]
         label = self.class_to_idx[img_item[1]]
         img = read_image(img_path)
-        if self.transform is not None: img = self.transform(img)
+        if self.transform is not None:
+            img = self.transform(img)
 
         return {
             "images": img,

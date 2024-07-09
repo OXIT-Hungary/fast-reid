@@ -6,12 +6,11 @@
 
 import torch
 import torch.nn.functional as F
-from torch import nn
-
 from fastreid.layers import *
+from fastreid.layers.weight_init import weights_init_kaiming
 from fastreid.modeling.heads import EmbeddingHead
 from fastreid.modeling.heads.build import REID_HEADS_REGISTRY
-from fastreid.layers.weight_init import weights_init_kaiming
+from torch import nn
 
 
 class OcclusionUnit(nn.Module):
@@ -117,7 +116,7 @@ class DSRHead(EmbeddingHead):
         bn_feat = self.bottleneck(global_feat)
         bn_feat = bn_feat[..., 0, 0]
 
-        if self.cls_layer.__class__.__name__ == 'Linear':
+        if self.cls_layer.__class__.__name__ == "Linear":
             pred_class_logits = F.linear(bn_feat, self.weight)
             fore_pred_class_logits = F.linear(bn_foreground_feat, self.weight_occ)
         else:

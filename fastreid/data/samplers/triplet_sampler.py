@@ -7,12 +7,11 @@
 import copy
 import itertools
 from collections import defaultdict
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy as np
-from torch.utils.data.sampler import Sampler
-
 from fastreid.utils import comm
+from torch.utils.data.sampler import Sampler
 
 
 def no_index(a, b):
@@ -39,7 +38,13 @@ def reorder_index(batch_indices, world_size):
 
 
 class BalancedIdentitySampler(Sampler):
-    def __init__(self, data_source: List, mini_batch_size: int, num_instances: int, seed: Optional[int] = None):
+    def __init__(
+        self,
+        data_source: List,
+        mini_batch_size: int,
+        num_instances: int,
+        seed: Optional[int] = None,
+    ):
         self.data_source = data_source
         self.num_instances = num_instances
         self.num_pids_per_batch = mini_batch_size // self.num_instances
@@ -82,7 +87,8 @@ class BalancedIdentitySampler(Sampler):
             # If remaining identities cannot be enough for a batch,
             # just drop the remaining parts
             drop_indices = self.num_identities % (self.num_pids_per_batch * self._world_size)
-            if drop_indices: identities = identities[:-drop_indices]
+            if drop_indices:
+                identities = identities[:-drop_indices]
 
             batch_indices = []
             for kid in identities:
@@ -120,8 +126,14 @@ class BalancedIdentitySampler(Sampler):
 
 
 class SetReWeightSampler(Sampler):
-    def __init__(self, data_source: str, mini_batch_size: int, num_instances: int, set_weight: list,
-                 seed: Optional[int] = None):
+    def __init__(
+        self,
+        data_source: str,
+        mini_batch_size: int,
+        num_instances: int,
+        set_weight: list,
+        seed: Optional[int] = None,
+    ):
         self.data_source = data_source
         self.num_instances = num_instances
         self.num_pids_per_batch = mini_batch_size // self.num_instances
@@ -132,9 +144,10 @@ class SetReWeightSampler(Sampler):
         self._world_size = comm.get_world_size()
         self.batch_size = mini_batch_size * self._world_size
 
-        assert self.batch_size % (sum(self.set_weight) * self.num_instances) == 0 and \
-               self.batch_size > sum(
-            self.set_weight) * self.num_instances, "Batch size must be divisible by the sum set weight"
+        assert (
+            self.batch_size % (sum(self.set_weight) * self.num_instances) == 0
+            and self.batch_size > sum(self.set_weight) * self.num_instances
+        ), "Batch size must be divisible by the sum set weight"
 
         self.index_pid = dict()
         self.pid_cam = defaultdict(list)
@@ -179,8 +192,12 @@ class SetReWeightSampler(Sampler):
         while True:
             batch_indices = []
             for camid in range(len(self.cam_pid.keys())):
-                select_pids = np.random.choice(self.cam_pid[camid], size=self.set_weight[camid], replace=False,
-                                               p=self.set_pid_prob[camid])
+                select_pids = np.random.choice(
+                    self.cam_pid[camid],
+                    size=self.set_weight[camid],
+                    replace=False,
+                    p=self.set_pid_prob[camid],
+                )
                 for pid in select_pids:
                     index_list = self.pid_index[pid]
                     if len(index_list) > self.num_instances:
@@ -253,7 +270,8 @@ class NaiveIdentitySampler(Sampler):
                     for _ in range(self.num_instances):
                         batch_indices.append(avl_idxs.pop(0))
 
-                    if len(avl_idxs) < self.num_instances: avl_pids.remove(pid)
+                    if len(avl_idxs) < self.num_instances:
+                        avl_pids.remove(pid)
 
                 if len(batch_indices) == self.batch_size:
                     yield from reorder_index(batch_indices, self._world_size)

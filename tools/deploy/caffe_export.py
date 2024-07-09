@@ -10,20 +10,20 @@ import sys
 
 import torch
 
-sys.path.append('.')
+sys.path.append(".")
 
 import pytorch_to_caffe
 from fastreid.config import get_cfg
 from fastreid.modeling.meta_arch import build_model
-from fastreid.utils.file_io import PathManager
 from fastreid.utils.checkpoint import Checkpointer
+from fastreid.utils.file_io import PathManager
 from fastreid.utils.logger import setup_logger
 
 # import some modules added in project like this below
 # sys.path.append("projects/PartialReID")
 # from partialreid import *
 
-setup_logger(name='fastreid')
+setup_logger(name="fastreid")
 logger = logging.getLogger("fastreid.caffe_export")
 
 
@@ -43,16 +43,8 @@ def get_parser():
         metavar="FILE",
         help="path to config file",
     )
-    parser.add_argument(
-        "--name",
-        default="baseline",
-        help="name for converted model"
-    )
-    parser.add_argument(
-        "--output",
-        default='caffe_model',
-        help='path to save converted caffe model'
-    )
+    parser.add_argument("--name", default="baseline", help="name for converted model")
+    parser.add_argument("--output", default="caffe_model", help="path to save converted caffe model")
     parser.add_argument(
         "--opts",
         help="Modify config options using the command-line 'KEY VALUE' pairs",
@@ -62,7 +54,7 @@ def get_parser():
     return parser
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = get_parser().parse_args()
     cfg = setup_cfg(args)
 

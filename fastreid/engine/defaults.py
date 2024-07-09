@@ -15,22 +15,23 @@ import sys
 from collections import OrderedDict
 
 import torch
-from torch.nn.parallel import DistributedDataParallel
-
 from fastreid.data import build_reid_test_loader, build_reid_train_loader
-from fastreid.evaluation import (ReidEvaluator,
-                                 inference_on_dataset, print_csv_format)
+from fastreid.evaluation import (ReidEvaluator, inference_on_dataset,
+                                 print_csv_format)
 from fastreid.modeling.meta_arch import build_model
 from fastreid.solver import build_lr_scheduler, build_optimizer
 from fastreid.utils import comm
 from fastreid.utils.checkpoint import Checkpointer
 from fastreid.utils.collect_env import collect_env_info
 from fastreid.utils.env import seed_all_rng
-from fastreid.utils.events import CommonMetricPrinter, JSONWriter, TensorboardXWriter
+from fastreid.utils.events import (CommonMetricPrinter, JSONWriter,
+                                   TensorboardXWriter)
 from fastreid.utils.file_io import PathManager
 from fastreid.utils.logger import setup_logger
+from torch.nn.parallel import DistributedDataParallel
+
 from . import hooks
-from .train_loop import TrainerBase, AMPTrainer, SimpleTrainer
+from .train_loop import AMPTrainer, SimpleTrainer, TrainerBase
 
 __all__ = ["default_argument_parser", "default_setup", "DefaultPredictor", "DefaultTrainer"]
 
@@ -51,14 +52,12 @@ def default_argument_parser():
     parser.add_argument("--eval-only", action="store_true", help="perform evaluation only")
     parser.add_argument("--num-gpus", type=int, default=1, help="number of gpus *per machine*")
     parser.add_argument("--num-machines", type=int, default=1, help="total number of machines")
-    parser.add_argument(
-        "--machine-rank", type=int, default=0, help="the rank of this machine (unique per machine)"
-    )
+    parser.add_argument("--machine-rank", type=int, default=0, help="the rank of this machine (unique per machine)")
 
     # PyTorch still may leave orphan processes in multi-gpu training.
     # Therefore we use a deterministic way to obtain port,
     # so that users are aware of orphan processes by seeing the port occupied.
-    port = 2 ** 15 + 2 ** 14 + hash(os.getuid() if sys.platform != "win32" else 1) % 2 ** 14
+    port = 2**15 + 2**14 + hash(os.getuid() if sys.platform != "win32" else 1) % 2**14
     parser.add_argument("--dist-url", default="tcp://127.0.0.1:{}".format(port))
     parser.add_argument(
         "opts",
@@ -208,7 +207,9 @@ class DefaultTrainer(TrainerBase):
             # ref to https://github.com/pytorch/pytorch/issues/22049 to set `find_unused_parameters=True`
             # for part of the parameters is not updated.
             model = DistributedDataParallel(
-                model, device_ids=[comm.get_local_rank()], broadcast_buffers=False,
+                model,
+                device_ids=[comm.get_local_rank()],
+                broadcast_buffers=False,
             )
 
         self._trainer = (AMPTrainer if cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
@@ -279,20 +280,24 @@ class DefaultTrainer(TrainerBase):
 
         if cfg.TEST.PRECISE_BN.ENABLED and hooks.get_bn_modules(self.model):
             logger.info("Prepare precise BN dataset")
-            ret.append(hooks.PreciseBN(
-                # Run at the same freq as (but before) evaluation.
-                self.model,
-                # Build a new data loader to not affect training
-                self.build_train_loader(cfg),
-                cfg.TEST.PRECISE_BN.NUM_ITER,
-            ))
+            ret.append(
+                hooks.PreciseBN(
+                    # Run at the same freq as (but before) evaluation.
+                    self.model,
+                    # Build a new data loader to not affect training
+                    self.build_train_loader(cfg),
+                    cfg.TEST.PRECISE_BN.NUM_ITER,
+                )
+            )
 
         if len(cfg.MODEL.FREEZE_LAYERS) > 0 and cfg.SOLVER.FREEZE_ITERS > 0:
-            ret.append(hooks.LayerFreeze(
-                self.model,
-                cfg.MODEL.FREEZE_LAYERS,
-                cfg.SOLVER.FREEZE_ITERS,
-            ))
+            ret.append(
+                hooks.LayerFreeze(
+                    self.model,
+                    cfg.MODEL.FREEZE_LAYERS,
+                    cfg.SOLVER.FREEZE_ITERS,
+                )
+            )
 
         # Do PreciseBN before checkpointer, because it updates the model and need to
         # be saved by checkpointer.
@@ -347,9 +352,7 @@ class DefaultTrainer(TrainerBase):
         """
         super().train(self.start_epoch, self.max_epoch, self.iters_per_epoch)
         if comm.is_main_process():
-            assert hasattr(
-                self, "_last_eval_results"
-            ), "No evaluation results obtained during training!"
+            assert hasattr(self, "_last_eval_results"), "No evaluation results obtained during training!"
             return self._last_eval_results
 
     def run_step(self):
@@ -431,9 +434,7 @@ class DefaultTrainer(TrainerBase):
             try:
                 data_loader, evaluator = cls.build_evaluator(cfg, dataset_name)
             except NotImplementedError:
-                logger.warn(
-                    "No evaluator found. implement its `build_evaluator` method."
-                )
+                logger.warn("No evaluator found. implement its `build_evaluator` method.")
                 results[dataset_name] = {}
                 continue
             results_i = inference_on_dataset(model, data_loader, evaluator, flip_test=cfg.TEST.FLIP.ENABLED)
@@ -442,11 +443,9 @@ class DefaultTrainer(TrainerBase):
             if comm.is_main_process():
                 assert isinstance(
                     results, dict
-                ), "Evaluator must return a dict on the main process. Got {} instead.".format(
-                    results
-                )
+                ), "Evaluator must return a dict on the main process. Got {} instead.".format(results)
                 logger.info("Evaluation results for {} in csv format:".format(dataset_name))
-                results_i['dataset'] = dataset_name
+                results_i["dataset"] = dataset_name
                 print_csv_format(results_i)
 
         if len(results) == 1:
@@ -480,7 +479,8 @@ class DefaultTrainer(TrainerBase):
                 with PathManager.open(path, "w") as f:
                     f.write(cfg.dump())
 
-        if frozen: cfg.freeze()
+        if frozen:
+            cfg.freeze()
 
         return cfg
 

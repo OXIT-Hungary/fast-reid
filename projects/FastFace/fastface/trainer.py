@@ -7,25 +7,25 @@ import logging
 import os
 import time
 
-from torch.nn.parallel import DistributedDataParallel
-from torch.nn.utils import clip_grad_norm_
-
-from fastreid.data.build import _root, build_reid_test_loader, build_reid_train_loader
+from fastreid.data.build import (_root, build_reid_test_loader,
+                                 build_reid_train_loader)
 from fastreid.data.datasets import DATASET_REGISTRY
 from fastreid.data.transforms import build_transforms
 from fastreid.engine import hooks
 from fastreid.engine.defaults import DefaultTrainer, TrainerBase
-from fastreid.engine.train_loop import SimpleTrainer, AMPTrainer
+from fastreid.engine.train_loop import AMPTrainer, SimpleTrainer
 from fastreid.solver import build_optimizer
 from fastreid.utils import comm
 from fastreid.utils.checkpoint import Checkpointer
 from fastreid.utils.logger import setup_logger
 from fastreid.utils.params import ContiguousParams
-from .face_data import MXFaceDataset
-from .face_data import TestFaceDataset
+from torch.nn.parallel import DistributedDataParallel
+from torch.nn.utils import clip_grad_norm_
+
+from .face_data import MXFaceDataset, TestFaceDataset
 from .face_evaluator import FaceEvaluator
 from .modeling import PartialFC
-from .pfc_checkpointer import PfcPeriodicCheckpointer, PfcCheckpointer
+from .pfc_checkpointer import PfcCheckpointer, PfcPeriodicCheckpointer
 from .utils_amp import MaxClipGradScaler
 
 
@@ -33,7 +33,7 @@ class FaceTrainer(DefaultTrainer):
     def __init__(self, cfg):
         TrainerBase.__init__(self)
 
-        logger = logging.getLogger('fastreid.partial-fc.trainer')
+        logger = logging.getLogger("fastreid.partial-fc.trainer")
         if not logger.isEnabledFor(logging.INFO):  # setup_logger is not called for fastreid
             setup_logger()
 
@@ -63,14 +63,24 @@ class FaceTrainer(DefaultTrainer):
             # ref to https://github.com/pytorch/pytorch/issues/22049 to set `find_unused_parameters=True`
             # for part of the parameters is not updated.
             model = DistributedDataParallel(
-                model, device_ids=[comm.get_local_rank()], broadcast_buffers=False,
+                model,
+                device_ids=[comm.get_local_rank()],
+                broadcast_buffers=False,
             )
 
         if cfg.MODEL.HEADS.PFC.ENABLED:
             mini_batch_size = cfg.SOLVER.IMS_PER_BATCH // comm.get_world_size()
             grad_scaler = MaxClipGradScaler(mini_batch_size, 128 * mini_batch_size, growth_interval=100)
-            self._trainer = PFCTrainer(model, data_loader, optimizer, param_wrapper,
-                                       self.pfc_module, self.pfc_optimizer, cfg.SOLVER.AMP.ENABLED, grad_scaler)
+            self._trainer = PFCTrainer(
+                model,
+                data_loader,
+                optimizer,
+                param_wrapper,
+                self.pfc_module,
+                self.pfc_optimizer,
+                cfg.SOLVER.AMP.ENABLED,
+                grad_scaler,
+            )
         else:
             self._trainer = (AMPTrainer if cfg.SOLVER.AMP.ENABLED else SimpleTrainer)(
                 model, data_loader, optimizer, param_wrapper
@@ -114,12 +124,10 @@ class FaceTrainer(DefaultTrainer):
             # Make sure checkpointer is after writer
             ret.insert(
                 len(ret) - 1,
-                PfcPeriodicCheckpointer(self.pfc_checkpointer, self.cfg.SOLVER.CHECKPOINT_PERIOD)
+                PfcPeriodicCheckpointer(self.pfc_checkpointer, self.cfg.SOLVER.CHECKPOINT_PERIOD),
             )
             # partial fc scheduler hook
-            ret.append(
-                hooks.LRScheduler(self.pfc_optimizer, self.pfc_scheduler)
-            )
+            ret.append(hooks.LRScheduler(self.pfc_optimizer, self.pfc_scheduler))
         return ret
 
     def resume_or_load(self, resume=True):
@@ -127,7 +135,7 @@ class FaceTrainer(DefaultTrainer):
         super().resume_or_load(resume)
         # Partial-FC loading state_dict
         if self.cfg.MODEL.HEADS.PFC.ENABLED:
-            self.pfc_checkpointer.resume_or_load('', resume=resume)
+            self.pfc_checkpointer.resume_or_load("", resume=resume)
 
     @classmethod
     def build_train_loader(cls, cfg):
@@ -164,8 +172,17 @@ class PFCTrainer(SimpleTrainer):
     https://github.com/deepinsight/insightface/blob/master/recognition/arcface_torch/partial_fc.py
     """
 
-    def __init__(self, model, data_loader, optimizer, param_wrapper, pfc_module, pfc_optimizer, amp_enabled,
-                 grad_scaler):
+    def __init__(
+        self,
+        model,
+        data_loader,
+        optimizer,
+        param_wrapper,
+        pfc_module,
+        pfc_optimizer,
+        amp_enabled,
+        grad_scaler,
+    ):
         super().__init__(model, data_loader, optimizer, param_wrapper)
 
         self.pfc_module = pfc_module

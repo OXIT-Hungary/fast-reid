@@ -22,25 +22,22 @@ class PartialBaseline(Baseline):
         fore_cls_outputs = outputs["fore_cls_outputs"]
         fore_feat = outputs["foreground_features"]
 
-        loss_names = self.loss_kwargs['loss_names']
+        loss_names = self.loss_kwargs["loss_names"]
 
-        if 'CrossEntropyLoss' in loss_names:
-            ce_kwargs = self.loss_kwargs.get('ce')
-            loss_dict['loss_fore_cls'] = cross_entropy_loss(
-                fore_cls_outputs,
-                gt_labels,
-                ce_kwargs.get('eps'),
-                ce_kwargs.get('alpha')
-            ) * ce_kwargs.get('scale')
+        if "CrossEntropyLoss" in loss_names:
+            ce_kwargs = self.loss_kwargs.get("ce")
+            loss_dict["loss_fore_cls"] = cross_entropy_loss(
+                fore_cls_outputs, gt_labels, ce_kwargs.get("eps"), ce_kwargs.get("alpha")
+            ) * ce_kwargs.get("scale")
 
-        if 'TripletLoss' in loss_names:
-            tri_kwargs = self.loss_kwargs.get('tri')
-            loss_dict['loss_fore_triplet'] = triplet_loss(
+        if "TripletLoss" in loss_names:
+            tri_kwargs = self.loss_kwargs.get("tri")
+            loss_dict["loss_fore_triplet"] = triplet_loss(
                 fore_feat,
                 gt_labels,
-                tri_kwargs.get('margin'),
-                tri_kwargs.get('norm_feat'),
-                tri_kwargs.get('hard_mining')
-            ) * tri_kwargs.get('scale')
+                tri_kwargs.get("margin"),
+                tri_kwargs.get("norm_feat"),
+                tri_kwargs.get("hard_mining"),
+            ) * tri_kwargs.get("scale")
 
         return loss_dict

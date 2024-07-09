@@ -1,7 +1,8 @@
-import unittest
-import numpy as np
 import os
+import unittest
 from glob import glob
+
+import numpy as np
 
 
 class TestFeatureAlign(unittest.TestCase):
@@ -22,9 +23,10 @@ class TestFeatureAlign(unittest.TestCase):
         for feat_name in feat_filenames:
             caffe_feat = np.load(os.path.join(caffe_feat_path, feat_name))
             feats.append(caffe_feat)
-        from ipdb import set_trace; set_trace()
+        from ipdb import set_trace
+
+        set_trace()
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

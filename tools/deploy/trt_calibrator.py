@@ -14,24 +14,22 @@ read_calibration_cache, write_calibration_cache.
 import os
 import sys
 
-import tensorrt as trt
-import pycuda.driver as cuda
-import pycuda.autoinit
-
 import numpy as np
+import pycuda.autoinit
+import pycuda.driver as cuda
+import tensorrt as trt
 import torchvision.transforms as T
 
-sys.path.append('../..')
+sys.path.append("../..")
+
+import logging
 
 from fastreid.data.build import _root
 from fastreid.data.data_utils import read_image
 from fastreid.data.datasets import DATASET_REGISTRY
-import logging
-
 from fastreid.data.transforms import ToTensor
 
-
-logger = logging.getLogger('trt_export.calibrator')
+logger = logging.getLogger("trt_export.calibrator")
 
 
 class FeatEntropyCalibrator(trt.IInt8EntropyCalibrator2):
@@ -39,16 +37,18 @@ class FeatEntropyCalibrator(trt.IInt8EntropyCalibrator2):
     def __init__(self, args):
         trt.IInt8EntropyCalibrator2.__init__(self)
 
-        self.cache_file = 'reid_feat.cache'
+        self.cache_file = "reid_feat.cache"
 
         self.batch_size = args.batch_size
         self.channel = args.channel
         self.height = args.height
         self.width = args.width
-        self.transform = T.Compose([
-            T.Resize((self.height, self.width), interpolation=3),  # [h,w]
-            ToTensor(),
-        ])
+        self.transform = T.Compose(
+            [
+                T.Resize((self.height, self.width), interpolation=3),  # [h,w]
+                ToTensor(),
+            ]
+        )
 
         dataset = DATASET_REGISTRY.get(args.calib_data)(root=_root)
         self._data_items = dataset.train + dataset.query + dataset.gallery
@@ -63,13 +63,12 @@ class FeatEntropyCalibrator(trt.IInt8EntropyCalibrator2):
 
     def next_batch(self):
         if self.batch_idx < self.max_batch_idx:
-            batch_files = self.imgs[self.batch_idx * self.batch_size:(self.batch_idx + 1) * self.batch_size]
-            batch_imgs = np.zeros((self.batch_size, self.channel, self.height, self.width),
-                                  dtype=np.float32)
+            batch_files = self.imgs[self.batch_idx * self.batch_size : (self.batch_idx + 1) * self.batch_size]
+            batch_imgs = np.zeros((self.batch_size, self.channel, self.height, self.width), dtype=np.float32)
             for i, f in enumerate(batch_files):
                 img = read_image(f)
                 img = self.transform(img).numpy()
-                assert (img.nbytes == self.data_size // self.batch_size), 'not valid img!' + f
+                assert img.nbytes == self.data_size // self.batch_size, "not valid img!" + f
                 batch_imgs[i] = img
             self.batch_idx += 1
             logger.info("batch:[{}/{}]".format(self.batch_idx, self.max_batch_idx))

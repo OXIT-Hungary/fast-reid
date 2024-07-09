@@ -9,13 +9,12 @@ import time
 import weakref
 from typing import Dict
 
+import fastreid.utils.comm as comm
 import numpy as np
 import torch
-from torch.nn.parallel import DataParallel, DistributedDataParallel
-
-import fastreid.utils.comm as comm
 from fastreid.utils.events import EventStorage, get_event_storage
 from fastreid.utils.params import ContiguousParams
+from torch.nn.parallel import DataParallel, DistributedDataParallel
 
 __all__ = ["HookBase", "TrainerBase", "SimpleTrainer"]
 
@@ -286,14 +285,11 @@ class SimpleTrainer(TrainerBase):
             storage.put_scalar("data_time", data_time)
 
             # average the rest metrics
-            metrics_dict = {
-                k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()
-            }
+            metrics_dict = {k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()}
             total_losses_reduced = sum(metrics_dict.values())
             if not np.isfinite(total_losses_reduced):
                 raise FloatingPointError(
-                    f"Loss became infinite or NaN at iteration={self.iter}!\n"
-                    f"loss_dict = {metrics_dict}"
+                    f"Loss became infinite or NaN at iteration={self.iter}!\n" f"loss_dict = {metrics_dict}"
                 )
 
             storage.put_scalar("total_loss", total_losses_reduced)

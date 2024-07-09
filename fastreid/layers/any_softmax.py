@@ -7,12 +7,7 @@
 import torch
 import torch.nn as nn
 
-__all__ = [
-    "Linear",
-    "ArcSoftmax",
-    "CosSoftmax",
-    "CircleSoftmax"
-]
+__all__ = ["Linear", "ArcSoftmax", "CosSoftmax", "CircleSoftmax"]
 
 
 class Linear(nn.Module):
@@ -30,8 +25,7 @@ class Linear(nn.Module):
 
 
 class CosSoftmax(Linear):
-    r"""Implement of large margin cosine distance:
-    """
+    r"""Implement of large margin cosine distance:"""
 
     def forward(self, logits, targets):
         index = torch.where(targets != -1)[0]
@@ -57,8 +51,8 @@ class ArcSoftmax(Linear):
 class CircleSoftmax(Linear):
 
     def forward(self, logits, targets):
-        alpha_p = torch.clamp_min(-logits.detach() + 1 + self.m, min=0.)
-        alpha_n = torch.clamp_min(logits.detach() + self.m, min=0.)
+        alpha_p = torch.clamp_min(-logits.detach() + 1 + self.m, min=0.0)
+        alpha_n = torch.clamp_min(logits.detach() + self.m, min=0.0)
         delta_p = 1 - self.m
         delta_n = self.m
 

@@ -8,38 +8,42 @@ import logging
 import math
 
 import torch
+from fastreid.layers import IBN, Non_local, SELayer, get_norm
+from fastreid.utils import comm
+from fastreid.utils.checkpoint import (get_missing_parameters_message,
+                                       get_unexpected_parameters_message)
 from torch import nn
 
-from fastreid.layers import (
-    IBN,
-    SELayer,
-    Non_local,
-    get_norm,
-)
-from fastreid.utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
 from .build import BACKBONE_REGISTRY
-from fastreid.utils import comm
-
 
 logger = logging.getLogger(__name__)
 model_urls = {
-    '18x': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
-    '34x': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
-    '50x': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
-    '101x': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'ibn_18x': 'https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet18_ibn_a-2f571257.pth',
-    'ibn_34x': 'https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet34_ibn_a-94bc1577.pth',
-    'ibn_50x': 'https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet50_ibn_a-d9d0bb7b.pth',
-    'ibn_101x': 'https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet101_ibn_a-59ea0ac6.pth',
-    'se_ibn_101x': 'https://github.com/XingangPan/IBN-Net/releases/download/v1.0/se_resnet101_ibn_a-fabed4e2.pth',
+    "18x": "https://download.pytorch.org/models/resnet18-5c106cde.pth",
+    "34x": "https://download.pytorch.org/models/resnet34-333f7ec4.pth",
+    "50x": "https://download.pytorch.org/models/resnet50-19c8e357.pth",
+    "101x": "https://download.pytorch.org/models/resnet101-5d3b4d8f.pth",
+    "ibn_18x": "https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet18_ibn_a-2f571257.pth",
+    "ibn_34x": "https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet34_ibn_a-94bc1577.pth",
+    "ibn_50x": "https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet50_ibn_a-d9d0bb7b.pth",
+    "ibn_101x": "https://github.com/XingangPan/IBN-Net/releases/download/v1.0/resnet101_ibn_a-59ea0ac6.pth",
+    "se_ibn_101x": "https://github.com/XingangPan/IBN-Net/releases/download/v1.0/se_resnet101_ibn_a-fabed4e2.pth",
 }
 
 
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, bn_norm, with_ibn=False, with_se=False,
-                 stride=1, downsample=None, reduction=16):
+    def __init__(
+        self,
+        inplanes,
+        planes,
+        bn_norm,
+        with_ibn=False,
+        with_se=False,
+        stride=1,
+        downsample=None,
+        reduction=16,
+    ):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         if with_ibn:
@@ -79,16 +83,24 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, bn_norm, with_ibn=False, with_se=False,
-                 stride=1, downsample=None, reduction=16):
+    def __init__(
+        self,
+        inplanes,
+        planes,
+        bn_norm,
+        with_ibn=False,
+        with_se=False,
+        stride=1,
+        downsample=None,
+        reduction=16,
+    ):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         if with_ibn:
             self.bn1 = IBN(planes, bn_norm)
         else:
             self.bn1 = get_norm(bn_norm, planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn2 = get_norm(bn_norm, planes)
         self.conv3 = nn.Conv2d(planes, planes * self.expansion, kernel_size=1, bias=False)
         self.bn3 = get_norm(bn_norm, planes * self.expansion)
@@ -128,8 +140,7 @@ class ResNet(nn.Module):
     def __init__(self, last_stride, bn_norm, with_ibn, with_se, with_nl, block, layers, non_layers):
         self.inplanes = 64
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = get_norm(bn_norm, 64)
         self.relu = nn.ReLU(inplace=True)
         # self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -150,8 +161,13 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(
+                    self.inplanes,
+                    planes * block.expansion,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
+                ),
                 get_norm(bn_norm, planes * block.expansion),
             )
 
@@ -164,17 +180,13 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def _build_nonlocal(self, layers, non_layers, bn_norm):
-        self.NL_1 = nn.ModuleList(
-            [Non_local(256, bn_norm) for _ in range(non_layers[0])])
+        self.NL_1 = nn.ModuleList([Non_local(256, bn_norm) for _ in range(non_layers[0])])
         self.NL_1_idx = sorted([layers[0] - (i + 1) for i in range(non_layers[0])])
-        self.NL_2 = nn.ModuleList(
-            [Non_local(512, bn_norm) for _ in range(non_layers[1])])
+        self.NL_2 = nn.ModuleList([Non_local(512, bn_norm) for _ in range(non_layers[1])])
         self.NL_2_idx = sorted([layers[1] - (i + 1) for i in range(non_layers[1])])
-        self.NL_3 = nn.ModuleList(
-            [Non_local(1024, bn_norm) for _ in range(non_layers[2])])
+        self.NL_3 = nn.ModuleList([Non_local(1024, bn_norm) for _ in range(non_layers[2])])
         self.NL_3_idx = sorted([layers[2] - (i + 1) for i in range(non_layers[2])])
-        self.NL_4 = nn.ModuleList(
-            [Non_local(2048, bn_norm) for _ in range(non_layers[3])])
+        self.NL_4 = nn.ModuleList([Non_local(2048, bn_norm) for _ in range(non_layers[3])])
         self.NL_4_idx = sorted([layers[3] - (i + 1) for i in range(non_layers[3])])
 
     def forward(self, x):
@@ -232,7 +244,7 @@ class ResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                nn.init.normal_(m.weight, 0, math.sqrt(2. / n))
+                nn.init.normal_(m.weight, 0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
@@ -243,26 +255,25 @@ def init_pretrained_weights(key):
 
     Layers that don't match with pretrained layers in name or size are kept unchanged.
     """
-    import os
     import errno
+    import os
+
     import gdown
 
     def _get_torch_home():
-        ENV_TORCH_HOME = 'TORCH_HOME'
-        ENV_XDG_CACHE_HOME = 'XDG_CACHE_HOME'
-        DEFAULT_CACHE_DIR = '~/.cache'
+        ENV_TORCH_HOME = "TORCH_HOME"
+        ENV_XDG_CACHE_HOME = "XDG_CACHE_HOME"
+        DEFAULT_CACHE_DIR = "~/.cache"
         torch_home = os.path.expanduser(
             os.getenv(
                 ENV_TORCH_HOME,
-                os.path.join(
-                    os.getenv(ENV_XDG_CACHE_HOME, DEFAULT_CACHE_DIR), 'torch'
-                )
+                os.path.join(os.getenv(ENV_XDG_CACHE_HOME, DEFAULT_CACHE_DIR), "torch"),
             )
         )
         return torch_home
 
     torch_home = _get_torch_home()
-    model_dir = os.path.join(torch_home, 'checkpoints')
+    model_dir = os.path.join(torch_home, "checkpoints")
     try:
         os.makedirs(model_dir)
     except OSError as e:
@@ -273,7 +284,7 @@ def init_pretrained_weights(key):
             # Unexpected OSError, re-raise.
             raise
 
-    filename = model_urls[key].split('/')[-1]
+    filename = model_urls[key].split("/")[-1]
 
     cached_file = os.path.join(model_dir, filename)
 
@@ -285,7 +296,7 @@ def init_pretrained_weights(key):
     comm.synchronize()
 
     logger.info(f"Loading pretrained model from {cached_file}")
-    state_dict = torch.load(cached_file, map_location=torch.device('cpu'))
+    state_dict = torch.load(cached_file, map_location=torch.device("cpu"))
 
     return state_dict
 
@@ -310,55 +321,56 @@ def build_resnet_backbone(cfg):
     # fmt: on
 
     num_blocks_per_stage = {
-        '18x': [2, 2, 2, 2],
-        '34x': [3, 4, 6, 3],
-        '50x': [3, 4, 6, 3],
-        '101x': [3, 4, 23, 3],
+        "18x": [2, 2, 2, 2],
+        "34x": [3, 4, 6, 3],
+        "50x": [3, 4, 6, 3],
+        "101x": [3, 4, 23, 3],
     }[depth]
 
     nl_layers_per_stage = {
-        '18x': [0, 0, 0, 0],
-        '34x': [0, 0, 0, 0],
-        '50x': [0, 2, 3, 0],
-        '101x': [0, 2, 9, 0]
+        "18x": [0, 0, 0, 0],
+        "34x": [0, 0, 0, 0],
+        "50x": [0, 2, 3, 0],
+        "101x": [0, 2, 9, 0],
     }[depth]
 
-    block = {
-        '18x': BasicBlock,
-        '34x': BasicBlock,
-        '50x': Bottleneck,
-        '101x': Bottleneck
-    }[depth]
+    block = {"18x": BasicBlock, "34x": BasicBlock, "50x": Bottleneck, "101x": Bottleneck}[depth]
 
-    model = ResNet(last_stride, bn_norm, with_ibn, with_se, with_nl, block,
-                   num_blocks_per_stage, nl_layers_per_stage)
+    model = ResNet(
+        last_stride,
+        bn_norm,
+        with_ibn,
+        with_se,
+        with_nl,
+        block,
+        num_blocks_per_stage,
+        nl_layers_per_stage,
+    )
     if pretrain:
         # Load pretrain path if specifically
         if pretrain_path:
             try:
-                state_dict = torch.load(pretrain_path, map_location=torch.device('cpu'))
+                state_dict = torch.load(pretrain_path, map_location=torch.device("cpu"))
                 logger.info(f"Loading pretrained model from {pretrain_path}")
             except FileNotFoundError as e:
-                logger.info(f'{pretrain_path} is not found! Please check this path.')
+                logger.info(f"{pretrain_path} is not found! Please check this path.")
                 raise e
             except KeyError as e:
                 logger.info("State dict keys error! Please check the state dict.")
                 raise e
         else:
             key = depth
-            if with_ibn: key = 'ibn_' + key
-            if with_se:  key = 'se_' + key
+            if with_ibn:
+                key = "ibn_" + key
+            if with_se:
+                key = "se_" + key
 
             state_dict = init_pretrained_weights(key)
 
         incompatible = model.load_state_dict(state_dict, strict=False)
         if incompatible.missing_keys:
-            logger.info(
-                get_missing_parameters_message(incompatible.missing_keys)
-            )
+            logger.info(get_missing_parameters_message(incompatible.missing_keys))
         if incompatible.unexpected_keys:
-            logger.info(
-                get_unexpected_parameters_message(incompatible.unexpected_keys)
-            )
+            logger.info(get_unexpected_parameters_message(incompatible.unexpected_keys))
 
     return model

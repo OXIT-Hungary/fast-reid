@@ -4,7 +4,6 @@
 @contact: sherlockliao01@gmail.com
 """
 import torch
-
 from fastreid.utils.registry import Registry
 
 META_ARCH_REGISTRY = Registry("META_ARCH")  # noqa F401 isort:skip

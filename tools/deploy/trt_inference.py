@@ -19,45 +19,21 @@ TRT_LOGGER = trt.Logger()
 def get_parser():
     parser = argparse.ArgumentParser(description="trt model inference")
 
-    parser.add_argument(
-        "--model-path",
-        default="outputs/trt_model/baseline.engine",
-        help="trt model path"
-    )
+    parser.add_argument("--model-path", default="outputs/trt_model/baseline.engine", help="trt model path")
     parser.add_argument(
         "--input",
         nargs="+",
-        help="A list of space separated input images; "
-             "or a single glob pattern such as 'directory/*.jpg'",
+        help="A list of space separated input images; " "or a single glob pattern such as 'directory/*.jpg'",
     )
-    parser.add_argument(
-        "--output",
-        default="trt_output",
-        help="path to save trt model inference results"
-    )
-    parser.add_argument(
-        '--batch-size',
-        default=1,
-        type=int,
-        help='the maximum batch size of trt module'
-    )
-    parser.add_argument(
-        "--height",
-        type=int,
-        default=256,
-        help="height of image"
-    )
-    parser.add_argument(
-        "--width",
-        type=int,
-        default=128,
-        help="width of image"
-    )
+    parser.add_argument("--output", default="trt_output", help="path to save trt model inference results")
+    parser.add_argument("--batch-size", default=1, type=int, help="the maximum batch size of trt module")
+    parser.add_argument("--height", type=int, default=256, help="height of image")
+    parser.add_argument("--width", type=int, default=128, help="width of image")
     return parser
 
 
 class HostDeviceMem(object):
-    """ Host and Device Memory Package """
+    """Host and Device Memory Package"""
 
     def __init__(self, host_mem, device_mem):
         self.host = host_mem
@@ -87,8 +63,7 @@ class TrtEngine:
         :return:
             ICudaEngine
         """
-        with open(trt_file, "rb") as f, \
-                trt.Runtime(TRT_LOGGER) as runtime:
+        with open(trt_file, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
             engine = runtime.deserialize_cuda_engine(f.read())
         return engine
 
@@ -155,7 +130,7 @@ class TrtEngine:
         if valid_bsz < self._batch_size:
             trt_inputs = np.vstack([trt_inputs, np.zeros((self._batch_size - valid_bsz, 3, *new_size))])
 
-        result, = self.infer(trt_inputs)
+        (result,) = self.infer(trt_inputs)
         result = result[:valid_bsz]
         feat = self.postprocess(result, axis=1)
         return feat
@@ -185,7 +160,8 @@ if __name__ == "__main__":
 
     trt = TrtEngine(args.model_path, batch_size=args.batch_size)
 
-    if not os.path.exists(args.output): os.makedirs(args.output)
+    if not os.path.exists(args.output):
+        os.makedirs(args.output)
 
     if args.input:
         if os.path.isdir(args.input[0]):
@@ -197,4 +173,4 @@ if __name__ == "__main__":
             # the model expects RGB inputs
             cvt_img = img[:, :, ::-1]
             feat = trt.inference_on_images([cvt_img])
-            np.save(os.path.join(args.output, os.path.basename(img_path).split('.')[0] + '.npy'), feat)
+            np.save(os.path.join(args.output, os.path.basename(img_path).split(".")[0] + ".npy"), feat)

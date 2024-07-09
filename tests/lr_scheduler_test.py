@@ -4,10 +4,10 @@ import unittest
 import torch
 from torch import nn
 
-sys.path.append('.')
-from solver.lr_scheduler import WarmupMultiStepLR
-from solver.build import make_optimizer
+sys.path.append(".")
 from config import cfg
+from solver.build import make_optimizer
+from solver.lr_scheduler import WarmupMultiStepLR
 
 
 class MyTestCase(unittest.TestCase):
@@ -22,5 +22,5 @@ class MyTestCase(unittest.TestCase):
                 optimizer.step()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -10,17 +10,19 @@ from glob import glob
 from fastreid.data.datasets import DATASET_REGISTRY
 from fastreid.data.datasets.bases import ImageDataset
 
-__all__ = ['LPW', ]
+__all__ = [
+    "LPW",
+]
 
 
 @DATASET_REGISTRY.register()
 class LPW(ImageDataset):
-    """LPW
-    """
+    """LPW"""
+
     dataset_dir = "pep_256x128/data_slim"
     dataset_name = "lpw"
 
-    def __init__(self, root='datasets', **kwargs):
+    def __init__(self, root="datasets", **kwargs):
         self.root = root
         self.train_path = os.path.join(self.root, self.dataset_dir)
 
@@ -34,7 +36,7 @@ class LPW(ImageDataset):
     def process_train(self, train_path):
         data = []
 
-        file_path_list = ['scen1', 'scen2', 'scen3']
+        file_path_list = ["scen1", "scen2", "scen3"]
 
         for scene in file_path_list:
             cam_list = os.listdir(os.path.join(train_path, scene))

@@ -1,9 +1,10 @@
+import os.path as osp
 import sys
 import timeit
-import numpy as np
-import os.path as osp
 
-sys.path.insert(0, osp.dirname(osp.abspath(__file__)) + '/../../..')
+import numpy as np
+
+sys.path.insert(0, osp.dirname(osp.abspath(__file__)) + "/../../..")
 
 from fastreid.evaluation.rank import evaluate_rank
 from fastreid.evaluation.roc import evaluate_roc
@@ -17,9 +18,9 @@ Note: you might encounter the following error:
 This is normal because the inputs are random numbers. Just try again.
 """
 
-print('*** Compare running time ***')
+print("*** Compare running time ***")
 
-setup = '''
+setup = """
 import sys
 import os.path as osp
 import numpy as np
@@ -39,37 +40,37 @@ q_pids = np.random.randint(0, num_q, size=num_q)
 g_pids = np.random.randint(0, num_g, size=num_g)
 q_camids = np.random.randint(0, 5, size=num_q)
 g_camids = np.random.randint(0, 5, size=num_g)
-'''
+"""
 
-print('=> Using CMC metric')
+print("=> Using CMC metric")
 pytime = timeit.timeit(
-    'evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank, use_cython=False)',
+    "evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank, use_cython=False)",
     setup=setup,
-    number=20
+    number=20,
 )
 cytime = timeit.timeit(
-    'evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank, use_cython=True)',
+    "evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank, use_cython=True)",
     setup=setup,
-    number=20
+    number=20,
 )
-print('Python time: {} s'.format(pytime))
-print('Cython time: {} s'.format(cytime))
-print('CMC Cython is {} times faster than python\n'.format(pytime / cytime))
+print("Python time: {} s".format(pytime))
+print("Cython time: {} s".format(cytime))
+print("CMC Cython is {} times faster than python\n".format(pytime / cytime))
 
-print('=> Using ROC metric')
+print("=> Using ROC metric")
 pytime = timeit.timeit(
-    'evaluate_roc(distmat, q_pids, g_pids, q_camids, g_camids, use_cython=False)',
+    "evaluate_roc(distmat, q_pids, g_pids, q_camids, g_camids, use_cython=False)",
     setup=setup,
-    number=20
+    number=20,
 )
 cytime = timeit.timeit(
-    'evaluate_roc(distmat, q_pids, g_pids, q_camids, g_camids, use_cython=True)',
+    "evaluate_roc(distmat, q_pids, g_pids, q_camids, g_camids, use_cython=True)",
     setup=setup,
-    number=20
+    number=20,
 )
-print('Python time: {} s'.format(pytime))
-print('Cython time: {} s'.format(cytime))
-print('ROC Cython is {} times faster than python\n'.format(pytime / cytime))
+print("Python time: {} s".format(pytime))
+print("Cython time: {} s".format(cytime))
+print("ROC Cython is {} times faster than python\n".format(pytime / cytime))
 
 print("=> Check precision")
 num_q = 30
@@ -93,14 +94,14 @@ cmc_cy, mAP_cy, mINP_cy = evaluate_rank(distmat, q_pids, g_pids, q_camids, g_cam
 np.testing.assert_allclose(cmc_py, cmc_cy, rtol=1e-3, atol=1e-6)
 np.testing.assert_allclose(mAP_py, mAP_cy, rtol=1e-3, atol=1e-6)
 np.testing.assert_allclose(mINP_py, mINP_cy, rtol=1e-3, atol=1e-6)
-print('Rank results between python and cython are the same!')
+print("Rank results between python and cython are the same!")
 
 scores_cy, labels_cy = evaluate_roc(distmat, q_pids, g_pids, q_camids, g_camids, use_cython=True)
 scores_py, labels_py = evaluate_roc(distmat, q_pids, g_pids, q_camids, g_camids, use_cython=False)
 
 np.testing.assert_allclose(scores_cy, scores_py, rtol=1e-3, atol=1e-6)
 np.testing.assert_allclose(labels_cy, labels_py, rtol=1e-3, atol=1e-6)
-print('ROC results between python and cython are the same!\n')
+print("ROC results between python and cython are the same!\n")
 
 print("=> Check exact values")
 print("mAP = {} \ncmc = {}\nmINP = {}\nScores = {}".format(np.array(mAP_cy), cmc_cy, np.array(mINP_cy), scores_cy))

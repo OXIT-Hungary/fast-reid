@@ -4,15 +4,14 @@
 @contact: sherlockliao01@gmail.com
 """
 
-from PIL import Image
 import io
 import logging
 import numbers
 
 import torch
-from torch.utils.data import Dataset
-
 from fastreid.data.common import CommDataset
+from PIL import Image
+from torch.utils.data import Dataset
 
 logger = logging.getLogger("fastreid.face_data")
 
@@ -29,7 +28,7 @@ class MXFaceDataset(Dataset):
 
         logger.info(f"loading recordio {path_imgrec}...")
         path_imgidx = path_imgrec[0:-4] + ".idx"
-        self.imgrec = mx.recordio.MXIndexedRecordIO(path_imgidx, path_imgrec, 'r')
+        self.imgrec = mx.recordio.MXIndexedRecordIO(path_imgidx, path_imgrec, "r")
         s = self.imgrec.read_idx(0)
         header, _ = mx.recordio.unpack(s)
         if header.flag > 0:
@@ -39,8 +38,9 @@ class MXFaceDataset(Dataset):
             # logger.debug(self.imgidx)
         else:
             self.imgidx = list(self.imgrec.keys)
-        logger.info(f"Number of Samples: {len(self.imgidx)}, "
-                    f"Number of Classes: {int(self.header0[1] - self.header0[0])}")
+        logger.info(
+            f"Number of Samples: {len(self.imgidx)}, " f"Number of Classes: {int(self.header0[1] - self.header0[0])}"
+        )
 
     def __getitem__(self, index):
         idx = self.imgidx[index]
@@ -52,7 +52,8 @@ class MXFaceDataset(Dataset):
         label = torch.tensor(label, dtype=torch.long)
 
         sample = Image.open(io.BytesIO(img))  # RGB
-        if self.transforms is not None: sample = self.transforms(sample)
+        if self.transforms is not None:
+            sample = self.transforms(sample)
         return {
             "images": sample,
             "targets": label,

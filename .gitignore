@@ -1,6 +1,8 @@
 
 logs
 
+**/outputs/
+
 # compilation and distribution
 __pycache__
 _ext

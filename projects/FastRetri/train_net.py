@@ -7,13 +7,12 @@
 
 import sys
 
-sys.path.append('.')
+sys.path.append(".")
 
 from fastreid.config import get_cfg
 from fastreid.engine import default_argument_parser, default_setup, launch
-from fastreid.utils.checkpoint import Checkpointer
 from fastreid.engine.defaults import DefaultTrainer
-
+from fastreid.utils.checkpoint import Checkpointer
 from fastretri import *
 
 

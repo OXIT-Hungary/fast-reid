@@ -4,7 +4,8 @@
 @contact: sherlockliao01@gmail.com
 """
 
-from .lamb import Lamb
-from .swa import SWA
-from .radam import RAdam
 from torch.optim import *
+
+from .lamb import Lamb
+from .radam import RAdam
+from .swa import SWA

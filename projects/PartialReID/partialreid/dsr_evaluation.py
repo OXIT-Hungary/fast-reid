@@ -10,13 +10,13 @@ from collections import OrderedDict
 import numpy as np
 import torch
 import torch.nn.functional as F
-
 from fastreid.evaluation.evaluator import DatasetEvaluator
 from fastreid.evaluation.rank import evaluate_rank
 from fastreid.utils import comm
+
 from .dsr_distance import compute_dsr_dist
 
-logger = logging.getLogger('fastreid.partialreid.dsr_evaluation')
+logger = logging.getLogger("fastreid.partialreid.dsr_evaluation")
 
 
 class DsrEvaluator(DatasetEvaluator):
@@ -79,14 +79,14 @@ class DsrEvaluator(DatasetEvaluator):
         scores = torch.cat(scores, dim=0)
 
         # query feature, person ids and camera ids
-        query_features = features[:self._num_query]
-        query_pids = np.asarray(pids[:self._num_query])
-        query_camids = np.asarray(camids[:self._num_query])
+        query_features = features[: self._num_query]
+        query_pids = np.asarray(pids[: self._num_query])
+        query_camids = np.asarray(camids[: self._num_query])
 
         # gallery features, person ids and camera ids
-        gallery_features = features[self._num_query:]
-        gallery_pids = np.asarray(pids[self._num_query:])
-        gallery_camids = np.asarray(camids[self._num_query:])
+        gallery_features = features[self._num_query :]
+        gallery_pids = np.asarray(pids[self._num_query :])
+        gallery_camids = np.asarray(camids[self._num_query :])
 
         if self.cfg.TEST.METRIC == "cosine":
             query_features = F.normalize(query_features, dim=1)
@@ -99,8 +99,12 @@ class DsrEvaluator(DatasetEvaluator):
         gallery_features = gallery_features.numpy()
         if self.cfg.TEST.DSR.ENABLED:
             logger.info("Testing with DSR setting")
-            dsr_dist = compute_dsr_dist(spatial_features[:self._num_query], spatial_features[self._num_query:], dist,
-                                        scores[:self._num_query])
+            dsr_dist = compute_dsr_dist(
+                spatial_features[: self._num_query],
+                spatial_features[self._num_query :],
+                dist,
+                scores[: self._num_query],
+            )
 
             max_value = 0
             k = 0
@@ -108,7 +112,7 @@ class DsrEvaluator(DatasetEvaluator):
                 lamb = 0.01 * i
                 dist1 = (1 - lamb) * dist + lamb * dsr_dist
                 cmc, all_AP, all_INP = evaluate_rank(dist1, query_pids, gallery_pids, query_camids, gallery_camids)
-                if (cmc[0] > max_value):
+                if cmc[0] > max_value:
                     k = lamb
                     max_value = cmc[0]
             dist1 = (1 - k) * dist + k * dsr_dist
@@ -119,8 +123,8 @@ class DsrEvaluator(DatasetEvaluator):
         mAP = np.mean(all_AP)
         mINP = np.mean(all_INP)
         for r in [1, 5, 10]:
-            self._results['Rank-{}'.format(r)] = cmc[r - 1] * 100
-        self._results['mAP'] = mAP * 100
-        self._results['mINP'] = mINP * 100
+            self._results["Rank-{}".format(r)] = cmc[r - 1] * 100
+        self._results["mAP"] = mAP * 100
+        self._results["mINP"] = mINP * 100
 
         return copy.deepcopy(self._results)

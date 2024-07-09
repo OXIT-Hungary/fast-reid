@@ -5,10 +5,9 @@
 """
 
 import torch
-from ray import tune
-
 from fastreid.engine.hooks import EvalHook, flatten_results_dict
 from fastreid.utils.checkpoint import Checkpointer
+from ray import tune
 
 
 class TuneReportHook(EvalHook):
@@ -20,9 +19,7 @@ class TuneReportHook(EvalHook):
         results = self._func()
 
         if results:
-            assert isinstance(
-                results, dict
-            ), "Eval function must return a dict. Got {} instead.".format(results)
+            assert isinstance(results, dict), "Eval function must return a dict. Got {} instead.".format(results)
 
             flattened_results = flatten_results_dict(results)
             for k, v in flattened_results.items():

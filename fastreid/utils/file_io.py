@@ -6,16 +6,8 @@ import logging
 import os
 import shutil
 from collections import OrderedDict
-from typing import (
-    IO,
-    Any,
-    Callable,
-    Dict,
-    List,
-    MutableMapping,
-    Optional,
-    Union,
-)
+from typing import (IO, Any, Callable, Dict, List, MutableMapping, Optional,
+                    Union)
 
 __all__ = ["PathManager", "get_cache_dir"]
 
@@ -31,9 +23,7 @@ def get_cache_dir(cache_dir: Optional[str] = None) -> str:
         2) otherwise ~/.torch/fvcore_cache
     """
     if cache_dir is None:
-        cache_dir = os.path.expanduser(
-            os.getenv("FVCORE_CACHE", "~/.torch/fvcore_cache")
-        )
+        cache_dir = os.path.expanduser(os.getenv("FVCORE_CACHE", "~/.torch/fvcore_cache"))
     return cache_dir
 
 
@@ -60,9 +50,7 @@ class PathHandler:
         else:
             logger = logging.getLogger(__name__)
             for k, v in kwargs.items():
-                logger.warning(
-                    "[PathManager] {}={} argument ignored".format(k, v)
-                )
+                logger.warning("[PathManager] {}={} argument ignored".format(k, v))
 
     def _get_supported_prefixes(self) -> List[str]:
         """
@@ -85,9 +73,7 @@ class PathHandler:
         """
         raise NotImplementedError()
 
-    def _open(
-            self, path: str, mode: str = "r", buffering: int = -1, **kwargs: Any
-    ) -> Union[IO[str], IO[bytes]]:
+    def _open(self, path: str, mode: str = "r", buffering: int = -1, **kwargs: Any) -> Union[IO[str], IO[bytes]]:
         """
         Open a stream to a URI, similar to the built-in `open`.
         Args:
@@ -105,11 +91,11 @@ class PathHandler:
         raise NotImplementedError()
 
     def _copy(
-            self,
-            src_path: str,
-            dst_path: str,
-            overwrite: bool = False,
-            **kwargs: Any,
+        self,
+        src_path: str,
+        dst_path: str,
+        overwrite: bool = False,
+        **kwargs: Any,
     ) -> bool:
         """
         Copies a source path to a destination path.
@@ -192,16 +178,16 @@ class NativePathHandler(PathHandler):
         return path
 
     def _open(
-            self,
-            path: str,
-            mode: str = "r",
-            buffering: int = -1,
-            encoding: Optional[str] = None,
-            errors: Optional[str] = None,
-            newline: Optional[str] = None,
-            closefd: bool = True,
-            opener: Optional[Callable] = None,
-            **kwargs: Any,
+        self,
+        path: str,
+        mode: str = "r",
+        buffering: int = -1,
+        encoding: Optional[str] = None,
+        errors: Optional[str] = None,
+        newline: Optional[str] = None,
+        closefd: bool = True,
+        opener: Optional[Callable] = None,
+        **kwargs: Any,
     ) -> Union[IO[str], IO[bytes]]:
         """
         Open a path.
@@ -252,11 +238,11 @@ class NativePathHandler(PathHandler):
         )
 
     def _copy(
-            self,
-            src_path: str,
-            dst_path: str,
-            overwrite: bool = False,
-            **kwargs: Any,
+        self,
+        src_path: str,
+        dst_path: str,
+        overwrite: bool = False,
+        **kwargs: Any,
     ) -> bool:
         """
         Copies a source path to a destination path.
@@ -336,9 +322,7 @@ class PathManager:
         return PathManager._NATIVE_PATH_HANDLER
 
     @staticmethod
-    def open(
-            path: str, mode: str = "r", buffering: int = -1, **kwargs: Any
-    ) -> Union[IO[str], IO[bytes]]:
+    def open(path: str, mode: str = "r", buffering: int = -1, **kwargs: Any) -> Union[IO[str], IO[bytes]]:
         """
         Open a stream to a URI, similar to the built-in `open`.
         Args:
@@ -353,14 +337,10 @@ class PathManager:
         Returns:
             file: a file-like object.
         """
-        return PathManager.__get_path_handler(path)._open(  # type: ignore
-            path, mode, buffering=buffering, **kwargs
-        )
+        return PathManager.__get_path_handler(path)._open(path, mode, buffering=buffering, **kwargs)  # type: ignore
 
     @staticmethod
-    def copy(
-            src_path: str, dst_path: str, overwrite: bool = False, **kwargs: Any
-    ) -> bool:
+    def copy(src_path: str, dst_path: str, overwrite: bool = False, **kwargs: Any) -> bool:
         """
         Copies a source path to a destination path.
         Args:
@@ -372,12 +352,8 @@ class PathManager:
         """
 
         # Copying across handlers is not supported.
-        assert PathManager.__get_path_handler(  # type: ignore
-            src_path
-        ) == PathManager.__get_path_handler(dst_path)
-        return PathManager.__get_path_handler(src_path)._copy(
-            src_path, dst_path, overwrite, **kwargs
-        )
+        assert PathManager.__get_path_handler(src_path) == PathManager.__get_path_handler(dst_path)  # type: ignore
+        return PathManager.__get_path_handler(src_path)._copy(src_path, dst_path, overwrite, **kwargs)
 
     @staticmethod
     def get_local_path(path: str, **kwargs: Any) -> str:
@@ -391,9 +367,7 @@ class PathManager:
         Returns:
             local_path (str): a file path which exists on the local file system
         """
-        return PathManager.__get_path_handler(  # type: ignore
-            path
-        )._get_local_path(path, **kwargs)
+        return PathManager.__get_path_handler(path)._get_local_path(path, **kwargs)  # type: ignore
 
     @staticmethod
     def exists(path: str, **kwargs: Any) -> bool:
@@ -404,9 +378,7 @@ class PathManager:
         Returns:
             bool: true if the path exists
         """
-        return PathManager.__get_path_handler(path)._exists(  # type: ignore
-            path, **kwargs
-        )
+        return PathManager.__get_path_handler(path)._exists(path, **kwargs)  # type: ignore
 
     @staticmethod
     def isfile(path: str, **kwargs: Any) -> bool:
@@ -417,9 +389,7 @@ class PathManager:
         Returns:
             bool: true if the path is a file
         """
-        return PathManager.__get_path_handler(path)._isfile(  # type: ignore
-            path, **kwargs
-        )
+        return PathManager.__get_path_handler(path)._isfile(path, **kwargs)  # type: ignore
 
     @staticmethod
     def isdir(path: str, **kwargs: Any) -> bool:
@@ -430,9 +400,7 @@ class PathManager:
         Returns:
             bool: true if the path is a directory
         """
-        return PathManager.__get_path_handler(path)._isdir(  # type: ignore
-            path, **kwargs
-        )
+        return PathManager.__get_path_handler(path)._isdir(path, **kwargs)  # type: ignore
 
     @staticmethod
     def ls(path: str, **kwargs: Any) -> List[str]:
@@ -443,9 +411,7 @@ class PathManager:
         Returns:
             List[str]: list of contents in given path
         """
-        return PathManager.__get_path_handler(path)._ls(  # type: ignore
-            path, **kwargs
-        )
+        return PathManager.__get_path_handler(path)._ls(path, **kwargs)  # type: ignore
 
     @staticmethod
     def mkdirs(path: str, **kwargs: Any) -> None:
@@ -456,9 +422,7 @@ class PathManager:
         Args:
             path (str): A URI supported by this PathHandler
         """
-        return PathManager.__get_path_handler(path)._mkdirs(  # type: ignore
-            path, **kwargs
-        )
+        return PathManager.__get_path_handler(path)._mkdirs(path, **kwargs)  # type: ignore
 
     @staticmethod
     def rm(path: str, **kwargs: Any) -> None:
@@ -467,9 +431,7 @@ class PathManager:
         Args:
             path (str): A URI supported by this PathHandler
         """
-        return PathManager.__get_path_handler(path)._rm(  # type: ignore
-            path, **kwargs
-        )
+        return PathManager.__get_path_handler(path)._rm(path, **kwargs)  # type: ignore
 
     @staticmethod
     def register_handler(handler: PathHandler) -> None:

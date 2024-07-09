@@ -8,13 +8,12 @@ import math
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
-from torch import nn
-
 from fastreid.layers import any_softmax
 from fastreid.modeling.losses.utils import concat_all_gather
 from fastreid.utils import comm
+from torch import nn
 
-logger = logging.getLogger('fastreid.partial_fc')
+logger = logging.getLogger("fastreid.partial_fc")
 
 
 class PartialFC(nn.Module):
@@ -25,15 +24,7 @@ class PartialFC(nn.Module):
     https://arxiv.org/abs/2010.05222
     """
 
-    def __init__(
-            self,
-            embedding_size,
-            num_classes,
-            sample_rate,
-            cls_type,
-            scale,
-            margin
-    ):
+    def __init__(self, embedding_size, num_classes, sample_rate, cls_type, scale, margin):
         super().__init__()
 
         self.embedding_size = embedding_size
@@ -43,11 +34,12 @@ class PartialFC(nn.Module):
         self.world_size = comm.get_world_size()
         self.rank = comm.get_rank()
         self.local_rank = comm.get_local_rank()
-        self.device = torch.device(f'cuda:{self.local_rank}')
+        self.device = torch.device(f"cuda:{self.local_rank}")
 
         self.num_local: int = self.num_classes // self.world_size + int(self.rank < self.num_classes % self.world_size)
-        self.class_start: int = self.num_classes // self.world_size * self.rank + \
-                                min(self.rank, self.num_classes % self.world_size)
+        self.class_start: int = self.num_classes // self.world_size * self.rank + min(
+            self.rank, self.num_classes % self.world_size
+        )
         self.num_sample: int = int(self.sample_rate * self.num_local)
 
         self.cls_layer = getattr(any_softmax, cls_type)(num_classes, scale, margin)
@@ -68,7 +60,7 @@ class PartialFC(nn.Module):
 
     def forward(self, total_features):
         torch.cuda.current_stream().wait_stream(self.stream)
-        if self.cls_layer.__class__.__name__ == 'Linear':
+        if self.cls_layer.__class__.__name__ == "Linear":
             logits = F.linear(total_features, self.sub_weight)
         else:
             logits = F.linear(F.normalize(total_features), F.normalize(self.sub_weight))
@@ -173,7 +165,7 @@ class PartialFC(nn.Module):
                 total_targets = targets
             # update sub_weight
             self.sample(total_targets)
-            optimizer.state.pop(optimizer.param_groups[-1]['params'][0], None)
-            optimizer.param_groups[-1]['params'][0] = self.sub_weight
+            optimizer.state.pop(optimizer.param_groups[-1]["params"][0], None)
+            optimizer.param_groups[-1]["params"][0] = self.sub_weight
             optimizer.state[self.sub_weight]["momentum_buffer"] = self.sub_weight_mom
             return total_targets
